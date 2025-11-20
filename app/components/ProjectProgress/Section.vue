@@ -182,7 +182,7 @@ useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'แก้ไขการดำเนินการสำเร็จ',
       description: 'คุณได้แก้ไขการดำเนินการเรียบร้อยแล้ว',
@@ -235,7 +235,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'เพิ่มการดำเนินการสำเร็จ',
       description: 'คุณได้เพิ่มการดำเนินการเรียบร้อยแล้ว',

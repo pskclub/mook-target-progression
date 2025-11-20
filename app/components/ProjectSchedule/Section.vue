@@ -183,7 +183,7 @@ useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'แก้ไขกำหนดการสำเร็จ',
       description: 'คุณได้แก้ไขกำหนดการเรียบร้อยแล้ว',
@@ -209,7 +209,7 @@ useWatchTrue(
 useWatchTrue(
   () => loader.delete.status.isSuccess,
   () => {
-    loader.fetchPage()
+    fetch()
     dialog.close()
     noti.success({
       title: 'ลบกำหนดการสำเร็จ',

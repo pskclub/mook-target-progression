@@ -164,7 +164,7 @@ useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'แก้ไข Target สำเร็จ',
       description: 'คุณได้แก้ไข Target เรียบร้อยแล้ว',
@@ -190,7 +190,7 @@ useWatchTrue(
 useWatchTrue(
   () => loader.delete.status.isSuccess,
   () => {
-    loader.fetchPage()
+    fetch()
     dialog.close()
     noti.success({
       title: 'ลบ Target สำเร็จ',
@@ -217,7 +217,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'เพิ่ม Target สำเร็จ',
       description: 'คุณได้เพิ่ม Target เรียบร้อยแล้ว',

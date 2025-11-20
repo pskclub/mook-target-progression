@@ -49,47 +49,45 @@
     <div class="flex gap-6">
       <!-- Vertical Zone Tabs -->
       <Card class="h-fit w-64 shrink-0">
-        <div class="p-4">
-          <h3 class="mb-4 font-semibold">
-            เขต (Zones)
-          </h3>
+        <h3 class="mb-4 font-semibold">
+          เขต (Zones)
+        </h3>
 
-          <!-- Loading Skeleton -->
+        <!-- Loading Skeleton -->
+        <div
+          v-if="zoneLoader.fetch.status.isLoading"
+          class="space-y-2"
+        >
           <div
-            v-if="zoneLoader.fetch.status.isLoading"
-            class="space-y-2"
-          >
-            <div
-              v-for="i in 3"
-              :key="i"
-              class="h-12 w-full animate-pulse rounded-lg bg-gray-100"
-            />
-          </div>
+            v-for="i in 3"
+            :key="i"
+            class="h-12 w-full animate-pulse rounded-lg bg-gray-100"
+          />
+        </div>
 
-          <!-- Zone List -->
-          <div
-            v-else
-            class="space-y-2"
+        <!-- Zone List -->
+        <div
+          v-else
+          class="space-y-2"
+        >
+          <button
+            v-for="zone in zoneLoader.fetch.items"
+            :key="zone.id"
+            class="w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
+            :class="
+              selectedZoneId === zone.id
+                ? 'bg-primary text-white'
+                : 'hover:bg-gray-100'
+            "
+            @click="selectedZoneId = zone.id"
           >
-            <button
-              v-for="zone in zoneLoader.fetch.items"
-              :key="zone.id"
-              class="w-full rounded-lg px-4 py-3 text-left transition-colors"
-              :class="
-                selectedZoneId === zone.id
-                  ? 'bg-primary text-white'
-                  : 'hover:bg-gray-100'
-              "
-              @click="selectedZoneId = zone.id"
-            >
-              {{ zone.name }}
-            </button>
-            <div
-              v-if="zoneLoader.fetch.items.length === 0"
-              class="py-4 text-center text-sm text-gray-500"
-            >
-              ไม่มีข้อมูลเขต
-            </div>
+            {{ zone.name }}
+          </button>
+          <div
+            v-if="zoneLoader.fetch.items.length === 0"
+            class="py-4 text-center text-sm text-gray-500"
+          >
+            ไม่มีข้อมูลเขต
           </div>
         </div>
       </Card>

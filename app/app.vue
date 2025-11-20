@@ -34,8 +34,7 @@
       <div class="w-full bg-gray-50">
         <main
           :class="[
-            'mx-auto min-h-full flex-1 px-6 py-10 lg:px-8',
-            'max-w-7xl 2xl:max-w-[70%]',
+            'mx-auto min-h-full w-full flex-1 px-6 py-10 lg:px-8',
           ]"
         >
           <Breadcrumb

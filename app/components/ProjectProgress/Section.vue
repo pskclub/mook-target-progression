@@ -12,36 +12,34 @@
         เพิ่มการดำเนินการ
       </Button>
     </div>
-    <Card>
-      <Table
-        :options="tableOptions"
-        @pageChange="loader.fetchPageChange"
-        @search="loader.fetchSearch"
-      >
-        <template #status-cell="{ row }">
-          <Badge
-            :color="getStatusColor(row.original.status)"
-            variant="subtle"
-          >
-            {{ row.original.status }}
-          </Badge>
-        </template>
-        <template #actions-cell="{ row }">
-          <div class="flex justify-end">
-            <ButtonActionIcon
-              icon="ph:pencil-simple"
-              color="neutral"
-              @click="onEdit(row.original)"
-            />
-            <ButtonActionIcon
-              icon="ph:trash"
-              color="error"
-              @click="onDelete(row.original)"
-            />
-          </div>
-        </template>
-      </Table>
-    </Card>
+    <Table
+      :options="tableOptions"
+      @pageChange="loader.fetchPageChange"
+      @search="loader.fetchSearch"
+    >
+      <template #status-cell="{ row }">
+        <Badge
+          :color="getStatusColor(row.original.status)"
+          variant="subtle"
+        >
+          {{ row.original.status }}
+        </Badge>
+      </template>
+      <template #actions-cell="{ row }">
+        <div class="flex justify-end">
+          <ButtonActionIcon
+            icon="ph:pencil-simple"
+            color="neutral"
+            @click="onEdit(row.original)"
+          />
+          <ButtonActionIcon
+            icon="ph:trash"
+            color="error"
+            @click="onDelete(row.original)"
+          />
+        </div>
+      </template>
+    </Table>
   </div>
 </template>
 

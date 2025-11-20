@@ -1,0 +1,26 @@
+{
+  "recommendations": [
+    "antfu.goto-alias",
+    "bradlc.vscode-tailwindcss",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "dariofuzinato.vue-peek",
+    "dbaeumer.vscode-eslint",
+    "ecmel.vscode-html-css",
+    "fallenmax.mithril-emmet",
+    "fill-labs.dependi",
+    "formulahendry.auto-close-tag",
+    "formulahendry.auto-complete-tag",
+    "formulahendry.auto-rename-tag",
+    "ionutvmi.path-autocomplete",
+    "metamediatechnology.longdo-spell-checker",
+    "naumovs.color-highlight",
+    "nuxtr.nuxtr-vscode",
+    "oven.bun-vscode",
+    "pranaygp.vscode-css-peek",
+    "steoates.autoimport",
+    "visualstudioexptteam.vscodeintellicode",
+    "vue.volar",
+    "zignd.html-css-class-completion"
+  ]
+}

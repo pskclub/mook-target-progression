@@ -1,0 +1,105 @@
+<template>
+  <Container
+    size="xs"
+    class="my-6 flex h-full flex-1 items-center justify-center"
+  >
+    <Card
+      class="flex w-full flex-col"
+      size="sm"
+    >
+      <NuxtLink :to="routes.home.to">
+        <img
+          src="/images/logo.jpg"
+          alt=""
+          class="mx-auto w-[110px] rounded-full"
+        />
+      </NuxtLink>
+      <p class="text-primary mx-auto my-4 text-2xl font-bold">
+        เข้าสู่ระบบ
+      </p>
+      <Form @submit="onSubmit">
+        <FormFields :options="formFields" />
+        <div class="mt-6">
+          <Button
+            type="submit"
+            block
+          >
+            เข้าสู่ระบบ
+          </Button>
+        </div>
+      </Form>
+      <NuxtLink
+        class="mt-8 text-center text-sm text-gray-400"
+        :to="routes.home.to"
+      >
+        กลับสู่หน้าหลัก
+      </NuxtLink>
+    </Card>
+  </Container>
+</template>
+
+<script lang="ts" setup>
+import { useApp } from '#imports'
+import { routes } from '~/constants/routes'
+import { INPUT_TYPES } from '#core/components/Form/types'
+
+useHead({
+  title: routes.login.label,
+})
+
+useApp().definePage({
+  title: routes.login.label,
+})
+
+const dialog = useDialog()
+const router = useRouter()
+const supabase = useSupabaseClient()
+
+const form = useForm({
+  validationSchema: toTypedSchema(
+    v.object({
+      email: v.pipe(v.string(), v.email('Invalid email')),
+      password: v.pipe(v.string(), v.nonEmpty('Password is required')),
+    }),
+  ),
+  initialValues: {
+    email: '',
+    password: '',
+  },
+})
+
+const formFields = createFormFields(() => [
+  {
+    type: INPUT_TYPES.TEXT,
+    props: {
+      isRequired: true,
+      name: 'email',
+      label: 'อีเมล',
+    },
+  },
+  {
+    type: INPUT_TYPES.PASSWORD,
+    props: {
+      isRequired: true,
+      name: 'password',
+      label: 'รหัสผ่าน',
+    },
+  },
+])
+
+const onSubmit = form.handleSubmit(async (values) => {
+  const res = await supabase.auth.signInWithPassword({
+    email: values.email,
+    password: values.password,
+  })
+
+  if (res.error) {
+    return dialog.error({
+      title: 'เข้าสู่ระบบไม่สำเร็จ',
+      description: res.error.message,
+    })
+  }
+
+  router.push(routes.dashboard.to)
+})
+</script>

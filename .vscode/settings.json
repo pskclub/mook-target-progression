@@ -1,0 +1,24 @@
+{
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "vue"
+  ],
+  "cSpell.ignoreRegExpList": [
+    "/[\\u0E00-\\u0E7F]/g"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.useFlatConfig": true,
+  "eslint.enable": true,
+  "eslint.run": "onSave",
+  "editor.formatOnSave": true,
+  "eslint.codeActionsOnSave.options": {
+    "source.fixAll.eslint": true
+  },
+  "cSpell.words": [
+    "noti",
+  ]
+}

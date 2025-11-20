@@ -96,7 +96,21 @@ export const createSupabaseAdapter = (
     }
 
     // Handle different loader types based on method and parameters
-    if (method.toLowerCase() === 'get') {
+    if (method.toLowerCase() === 'get' && params.id) {
+      // ObjectLoader case for GET
+      const result = await supabase
+        .from(url.split('/')[1])
+        .select(params.select)
+        .eq('id', params.id)
+
+      return {
+        data: result.data?.[0] || null,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      }
+    } else if (method.toLowerCase() === 'get') {
       if (params.page && params.limit) {
         // PageLoader case
         const page = params.page || 1

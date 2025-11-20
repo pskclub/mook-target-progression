@@ -2,14 +2,14 @@
   <div class="mb-8">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-xl font-bold">
-        ผลการดำเนินการ
+        การดำเนินการ
       </h2>
       <Button
         trailing-icon="ph:plus"
         size="sm"
         @click="onAdd"
       >
-        เพิ่มผลการดำเนินการ
+        เพิ่มการดำเนินการ
       </Button>
     </div>
     <Card>
@@ -73,14 +73,6 @@ const tableOptions = useTable({
       }: any) => row.original.products?.name || '-',
     },
     {
-      accessorKey: 'zones.name',
-      header: 'Zone',
-      type: COLUMN_TYPES.TEXT,
-      cell: ({
-        row,
-      }: any) => row.original.zones?.name || '-',
-    },
-    {
       accessorKey: 'customers.name',
       header: 'Customer',
       type: COLUMN_TYPES.TEXT,
@@ -120,6 +112,8 @@ const onEdit = (values: IProjectProgress) => {
   editModal.open({
     isEditing: true,
     values: values,
+    projectId: props.projectId,
+    zoneId: props.zoneId,
     status: () => loader.update.status,
     onSubmit: (payload: IProjectProgress) => {
       loader.updateRun(String(values.id), {
@@ -131,6 +125,8 @@ const onEdit = (values: IProjectProgress) => {
 
 const onAdd = () => {
   addModal.open({
+    projectId: props.projectId,
+    zoneId: props.zoneId,
     status: () => loader.add.status,
     onSubmit: (payload: IProjectProgress) => {
       loader.addRun({
@@ -148,7 +144,7 @@ const onDelete = (values: IProjectProgress) => {
   dialog
     .confirm({
       title: 'ยืนยันการลบ',
-      description: `คุณต้องการลบผลการดำเนินการนี้หรือไม่?`,
+      description: `คุณต้องการลบการดำเนินการนี้หรือไม่?`,
       confirmText: 'ยืนยัน',
       cancelText: 'ยกเลิก',
       type: DialogType.ERROR,
@@ -190,8 +186,8 @@ useWatchTrue(
     editModal.close()
     loader.fetchPage()
     noti.success({
-      title: 'แก้ไขผลการดำเนินการสำเร็จ',
-      description: 'คุณได้แก้ไขผลการดำเนินการเรียบร้อยแล้ว',
+      title: 'แก้ไขการดำเนินการสำเร็จ',
+      description: 'คุณได้แก้ไขการดำเนินการเรียบร้อยแล้ว',
     })
   },
 )
@@ -202,10 +198,10 @@ useWatchTrue(
     editModal.close()
     dialog.close()
     noti.error({
-      title: 'แก้ไขผลการดำเนินการไม่สำเร็จ',
+      title: 'แก้ไขการดำเนินการไม่สำเร็จ',
       description: StringHelper.getError(
         loader.update.status.errorData,
-        'เกิดข้อผิดพลาดในการแก้ไขผลการดำเนินการ กรุณาลองใหม่อีกครั้ง',
+        'เกิดข้อผิดพลาดในการแก้ไขการดำเนินการ กรุณาลองใหม่อีกครั้ง',
       ),
     })
   },
@@ -217,8 +213,8 @@ useWatchTrue(
     loader.fetchPage()
     dialog.close()
     noti.success({
-      title: 'ลบผลการดำเนินการสำเร็จ',
-      description: 'คุณได้ลบผลการดำเนินการเรียบร้อยแล้ว',
+      title: 'ลบการดำเนินการสำเร็จ',
+      description: 'คุณได้ลบการดำเนินการเรียบร้อยแล้ว',
     })
   },
 )
@@ -228,10 +224,10 @@ useWatchTrue(
   () => {
     dialog.close()
     noti.error({
-      title: 'ลบผลการดำเนินการไม่สำเร็จ',
+      title: 'ลบการดำเนินการไม่สำเร็จ',
       description: StringHelper.getError(
         loader.delete.status.errorData,
-        'เกิดข้อผิดพลาดในการลบผลการดำเนินการ กรุณาลองใหม่อีกครั้ง',
+        'เกิดข้อผิดพลาดในการลบการดำเนินการ กรุณาลองใหม่อีกครั้ง',
       ),
     })
   },
@@ -243,8 +239,8 @@ useWatchTrue(
     addModal.close()
     loader.fetchPage()
     noti.success({
-      title: 'เพิ่มผลการดำเนินการสำเร็จ',
-      description: 'คุณได้เพิ่มผลการดำเนินการเรียบร้อยแล้ว',
+      title: 'เพิ่มการดำเนินการสำเร็จ',
+      description: 'คุณได้เพิ่มการดำเนินการเรียบร้อยแล้ว',
     })
   },
 )
@@ -255,10 +251,10 @@ useWatchTrue(
     addModal.close()
     dialog.close()
     noti.error({
-      title: 'เพิ่มผลการดำเนินการไม่สำเร็จ',
+      title: 'เพิ่มการดำเนินการไม่สำเร็จ',
       description: StringHelper.getError(
         loader.add.status.errorData,
-        'เกิดข้อผิดพลาดในการเพิ่มผลการดำเนินการ กรุณาลองใหม่อีกครั้ง',
+        'เกิดข้อผิดพลาดในการเพิ่มการดำเนินการ กรุณาลองใหม่อีกครั้ง',
       ),
     })
   },

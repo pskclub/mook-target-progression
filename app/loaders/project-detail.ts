@@ -17,7 +17,7 @@ export interface IProjectTarget {
   zone_id: string
   amount: number
   created_at: string
-  products?: { name: string }
+  products?: IProduct
 }
 
 export interface IProjectSchedule {

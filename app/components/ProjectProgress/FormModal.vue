@@ -2,7 +2,7 @@
   <Modal
     :close="{ onClick: () => emits('close', false) }"
     :dismissible="false"
-    :title="isEditing ? 'แก้ไขผลการดำเนินการ' : 'เพิ่มผลการดำเนินการ'"
+    :title="isEditing ? 'แก้ไขการดำเนินการ' : 'เพิ่มการดำเนินการ'"
     description="Project Progress info."
   >
     <template #body>
@@ -41,12 +41,14 @@ const emits = defineEmits<{ close: [boolean] }>()
 const props = defineProps<{
   isEditing?: boolean
   values?: any
+  projectId: string
+  zoneId: string
 
   status: () => IStatus
   onSubmit: (values: any) => void
 }>()
 
-const productLoader = useProductsPageLoader()
+const targetLoader = useProjectTargetLoader(props.projectId)
 const customerLoader = useCustomerPageLoader()
 
 const form = useForm({
@@ -67,9 +69,9 @@ const formFields = createFormFields(() => [
       label: 'สินค้า',
       name: 'product_id',
       required: true,
-      options: productLoader.fetch.items.map((item: any) => ({
-        label: item.name,
-        value: item.id,
+      options: targetLoader.fetch.items.map((item) => ({
+        label: item.products?.name,
+        value: item.products?.id,
       })),
     },
   },
@@ -79,7 +81,7 @@ const formFields = createFormFields(() => [
       label: 'ลูกค้า',
       name: 'customer_id',
       required: true,
-      options: customerLoader.fetch.items.map((item: any) => ({
+      options: customerLoader.fetch.items.map((item) => ({
         label: item.name,
         value: item.id,
       })),
@@ -114,11 +116,16 @@ const onSubmit = form.handleSubmit((values) => {
 })
 
 // Load data
-productLoader.fetchSetLoading()
+targetLoader.fetchSetLoading()
 customerLoader.fetchSetLoading()
 
 onMounted(() => {
-  productLoader.fetchPage()
   customerLoader.fetchPage()
+  targetLoader.fetchPage(1, '', {
+    params: {
+      project_id: props.projectId,
+      zone_id: props.zoneId,
+    },
+  })
 })
 </script>

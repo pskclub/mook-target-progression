@@ -6,7 +6,7 @@ export default defineAppConfig({
     month_format: 'MMM yyyy',
     date_time_format: 'dd/MM/yyyy HH:mm',
     color: '#335AFF',
-    limit_per_page: 30,
+    limit_per_page: 100,
     locale: 'th',
     site_name: 'Mook Target Progression',
   },

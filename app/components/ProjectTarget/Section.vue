@@ -2,7 +2,7 @@
   <div class="mb-8">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-xl font-bold">
-        Target of Product
+        ตัวชี้วัด
       </h2>
       <Button
         trailing-icon="ph:plus"
@@ -37,16 +37,18 @@
 
 <script lang="ts" setup>
 import FormModal from '~/components/ProjectTarget/FormModal.vue'
-import type { IProjectTarget } from '~/loaders/project-detail'
+import type { IProjectProgress, IProjectTarget } from '~/loaders/project-detail'
 
 const props = defineProps<{
   projectId: string
+  projectProgresses: IProjectProgress[]
 }>()
 
 const loader = useProjectTargetLoader(props.projectId)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
+
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 
@@ -68,18 +70,66 @@ const tableOptions = useTable({
       accessorKey: 'amount',
       header: 'Total',
       type: COLUMN_TYPES.NUMBER,
+      meta: {
+        class: {
+          td: 'text-right',
+          th: 'text-right',
+        },
+      },
     },
     {
       accessorKey: 'pending',
-      header: 'Pending',
+      header: 'ขาขึ้น',
       type: COLUMN_TYPES.NUMBER,
-      cell: () => '-', // TODO: Calculate from progress
+      meta: {
+        class: {
+          td: 'text-right',
+          th: 'text-right',
+        },
+      },
+      cell: ({
+        row,
+      }: any) => {
+        const progresses = props.projectProgresses
+
+        return progresses.filter((p) => p.status === 'PENDING' && p.product_id === row.original.products?.id).length
+      },
     },
     {
       accessorKey: 'approved',
-      header: 'Approved',
+      header: 'ขาลง',
       type: COLUMN_TYPES.NUMBER,
-      cell: () => '-', // TODO: Calculate from progress
+      meta: {
+        class: {
+          td: 'text-right',
+          th: 'text-right',
+        },
+      },
+      cell: ({
+        row,
+      }: any) => {
+        const progresses = props.projectProgresses
+
+        return progresses.filter((p) => p.status === 'APPROVED' && p.product_id === row.original.products?.id).length
+      },
+    },
+    {
+      accessorKey: 'cancel',
+      header: 'ยกเลิก',
+      type: COLUMN_TYPES.NUMBER,
+      meta: {
+        class: {
+          td: 'text-right',
+          th: 'text-right',
+        },
+      },
+      cell: ({
+        row,
+      }: any) => {
+        const progresses = props.projectProgresses
+
+        return progresses.filter((p) => ['CANCELLED'].includes(p.status) && p.product_id === row.original.products?.id).length
+      },
     },
     {
       accessorKey: 'actions',
@@ -153,19 +203,6 @@ const fetch = (page = 1) => {
     },
   })
 }
-
-// Watch for success/error states
-useWatchTrue(
-  () => loader.update.status.isSuccess,
-  () => {
-    editModal.close()
-    fetch()
-    noti.success({
-      title: 'แก้ไข Target สำเร็จ',
-      description: 'คุณได้แก้ไข Target เรียบร้อยแล้ว',
-    })
-  },
-)
 
 useWatchTrue(
   () => loader.update.status.isError,

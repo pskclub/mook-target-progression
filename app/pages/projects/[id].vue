@@ -46,6 +46,7 @@
     </div>
 
     <ProjectTargetSection
+      :project-progresses="projectProgressLoader.fetch.items"
       :project-id="projectId"
     />
     <!-- Zone Tabs and Content -->
@@ -151,6 +152,7 @@ const route = useRoute()
 const projectId = route.params.id as string
 
 const project = useProjectsPageLoader()
+const projectProgressLoader = useProjectProgressLoader(projectId)
 const zoneLoader = useZonePageLoader()
 
 // Selected zone state
@@ -191,6 +193,7 @@ const dashboardStats = computed(() => {
 // Load project data
 project.findSetLoading()
 zoneLoader.fetchSetLoading()
+projectProgressLoader.fetchSetLoading()
 
 onMounted(() => {
   project.findRun(projectId, {
@@ -201,6 +204,7 @@ onMounted(() => {
   })
 
   zoneLoader.fetchPage()
+  projectProgressLoader.fetchPage()
 })
 
 // Auto-select first zone when zones are loaded

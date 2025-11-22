@@ -22,7 +22,7 @@
           :color="getStatusColor(row.original.status)"
           variant="subtle"
         >
-          {{ row.original.status }}
+          {{ PROJECT_PROGRESS_STATUS_LABEL[row.original.status as keyof typeof PROJECT_PROGRESS_STATUS_LABEL] }}
         </Badge>
       </template>
       <template #actions-cell="{ row }">

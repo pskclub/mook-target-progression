@@ -41,7 +41,6 @@ import type { IProjectTarget } from '~/loaders/project-detail'
 
 const props = defineProps<{
   projectId: string
-  zoneId: string
 }>()
 
 const loader = useProjectTargetLoader(props.projectId)
@@ -53,6 +52,9 @@ const addModal = overlay.create(FormModal)
 
 const tableOptions = useTable({
   repo: loader,
+  options: {
+    isHidePagination: true,
+  },
   columns: () => [
     {
       accessorKey: 'products.name',
@@ -112,7 +114,6 @@ const onAdd = () => {
       loader.addRun({
         data: {
           ...payload,
-          zone_id: props.zoneId,
           project_id: props.projectId,
         },
       })
@@ -148,16 +149,10 @@ onMounted(() => {
 const fetch = (page = 1) => {
   loader.fetchPage(page, '', {
     params: {
-      zone_id: props.zoneId,
       project_id: props.projectId,
     },
   })
 }
-
-// Watch for zone changes
-watch(() => props.zoneId, () => {
-  fetch()
-})
 
 // Watch for success/error states
 useWatchTrue(

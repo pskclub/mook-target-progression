@@ -41,13 +41,16 @@ const emits = defineEmits<{ close: [boolean] }>()
 const props = defineProps<{
   isEditing?: boolean
   values?: any
+  projectId: string
+  productId: string
+  customerId: string
 
   status: () => IStatus
   onSubmit: (values: any) => void
 }>()
 
-const productLoader = useProductsPageLoader()
 const customerLoader = useCustomerPageLoader()
+const targetLoader = useProjectTargetLoader(props.projectId)
 
 const form = useForm({
   initialValues: props.values
@@ -57,6 +60,8 @@ const form = useForm({
     }
     : {
       date: new Date().toISOString().split('T')[0],
+      product_id: props.productId,
+      customer_id: props.customerId,
     },
   validationSchema: toTypedSchema(
     v.object({
@@ -69,24 +74,19 @@ const form = useForm({
 })
 
 const formFields = createFormFields(() => [
-  {
-    type: INPUT_TYPES.DATE,
-    props: {
-      label: 'วันที่',
-      name: 'date',
-      required: true,
-    },
-  },
+
   {
     type: INPUT_TYPES.SELECT,
     props: {
       label: 'สินค้า',
       name: 'product_id',
+      disabled: true,
       required: true,
-      options: productLoader.fetch.items.map((item: any) => ({
-        label: item.name,
-        value: item.id,
+      options: targetLoader.fetch.items.map((item: any) => ({
+        label: item.products?.name,
+        value: item.product_id,
       })),
+      loading: targetLoader.fetch.status.isLoading,
     },
   },
   {
@@ -94,11 +94,21 @@ const formFields = createFormFields(() => [
     props: {
       label: 'ลูกค้า',
       name: 'customer_id',
+      disabled: true,
       required: true,
       options: customerLoader.fetch.items.map((item: any) => ({
         label: item.name,
         value: item.id,
       })),
+      loading: customerLoader.fetch.status.isLoading,
+    },
+  },
+  {
+    type: INPUT_TYPES.DATE,
+    props: {
+      label: 'วันที่',
+      name: 'date',
+      required: true,
     },
   },
   {
@@ -116,11 +126,11 @@ const onSubmit = form.handleSubmit((values) => {
 })
 
 // Load data
-productLoader.fetchSetLoading()
+targetLoader.fetchSetLoading()
 customerLoader.fetchSetLoading()
 
 onMounted(() => {
-  productLoader.fetchPage()
+  targetLoader.fetchPage()
   customerLoader.fetchPage()
 })
 </script>

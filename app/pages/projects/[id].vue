@@ -45,6 +45,9 @@
       </Card>
     </div>
 
+    <ProjectTargetSection
+      :project-id="projectId"
+    />
     <!-- Zone Tabs and Content -->
     <div class="flex gap-6">
       <!-- Vertical Zone Tabs -->
@@ -109,10 +112,6 @@
           class="space-y-8"
         >
           <!-- Target of Product Section -->
-          <ProjectTargetSection
-            :project-id="projectId"
-            :zone-id="selectedZoneId"
-          />
 
           <!-- Project Progress Section -->
           <ProjectProgressSection

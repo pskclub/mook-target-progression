@@ -69,10 +69,12 @@ const formFields = createFormFields(() => [
       label: 'สินค้า',
       name: 'product_id',
       required: true,
+      disabled: props.isEditing,
       options: targetLoader.fetch.items.map((item) => ({
         label: item.products?.name,
         value: item.products?.id,
       })),
+      loading: targetLoader.fetch.status.isLoading,
     },
   },
   {
@@ -81,10 +83,12 @@ const formFields = createFormFields(() => [
       label: 'ลูกค้า',
       name: 'customer_id',
       required: true,
+      disabled: props.isEditing,
       options: customerLoader.fetch.items.map((item) => ({
         label: item.name,
         value: item.id,
       })),
+      loading: customerLoader.fetch.status.isLoading,
     },
   },
   {
@@ -124,7 +128,6 @@ onMounted(() => {
   targetLoader.fetchPage(1, '', {
     params: {
       project_id: props.projectId,
-      zone_id: props.zoneId,
     },
   })
 })

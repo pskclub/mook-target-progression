@@ -1,49 +1,150 @@
 <template>
-  <div class="mb-8">
-    <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-bold">
-        กำหนดการรวม
-      </h2>
-    </div>
-    <Card>
-      <CalendarView
-        :schedules="loader.fetch.items"
-        @onScheduleClick="onEdit"
-      />
-    </Card>
-  </div>
+  <Modal
+    :close="{ onClick: () => emits('close', false) }"
+    :dismissible="true"
+    title="กำหนดการของการดำเนินการ"
+    description="จัดการกำหนดการสำหรับการดำเนินการนี้"
+    :ui="{
+      content: 'max-w-4xl',
+    }"
+  >
+    <template #body>
+      <div class="mb-4 flex items-center justify-between">
+        <div class="flex gap-2">
+          <Button
+            :variant="viewMode === 'calendar' ? 'solid' : 'ghost'"
+            size="sm"
+            leading-icon="ph:calendar"
+            @click="viewMode = 'calendar'"
+          >
+            ปฏิทิน
+          </Button>
+          <Button
+            :variant="viewMode === 'table' ? 'solid' : 'ghost'"
+            size="sm"
+            leading-icon="ph:table"
+            @click="viewMode = 'table'"
+          >
+            ตาราง
+          </Button>
+        </div>
+        <Button
+          trailing-icon="ph:plus"
+          size="sm"
+          @click="onAdd"
+        >
+          เพิ่มกำหนดการ
+        </Button>
+      </div>
+
+      <!-- Table View -->
+      <div v-if="viewMode === 'table'">
+        <Table
+          :options="tableOptions"
+          @pageChange="loader.fetchPageChange"
+          @search="loader.fetchSearch"
+        >
+          <template #actions-cell="{ row }">
+            <div class="flex justify-end">
+              <ButtonActionIcon
+                icon="ph:pencil-simple"
+                color="neutral"
+                @click="onEdit(row.original)"
+              />
+              <ButtonActionIcon
+                icon="ph:trash"
+                color="error"
+                @click="onDelete(row.original)"
+              />
+            </div>
+          </template>
+        </Table>
+      </div>
+
+      <!-- Calendar View -->
+      <div v-else>
+        <CalendarView
+          :schedules="loader.fetch.items"
+          @scheduleClick="onEdit"
+        />
+      </div>
+    </template>
+  </Modal>
 </template>
 
 <script lang="ts" setup>
-import FormModal from '~/components/ProjectSchedule/FormModal.vue'
-import CalendarModal from '~/components/ProjectSchedule/CalendarModal.vue'
 import CalendarView from '~/components/ProjectSchedule/CalendarView.vue'
-import type { IProjectSchedule } from '~/loaders/project-detail'
+import FormModal from '~/components/ProjectSchedule/FormModal.vue'
+import type { IProjectProgress, IProjectSchedule } from '~/loaders/project-detail'
+
+const emits = defineEmits<{ close: [boolean] }>()
 
 const props = defineProps<{
+  progress: IProjectProgress
   projectId: string
   zoneId: string
 }>()
 
+const viewMode = ref<'table' | 'calendar'>('calendar')
 const loader = useProjectScheduleLoader(props.projectId)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
-const calendarModal = overlay.create(CalendarModal)
 
-const showCalendar = () => {
-  calendarModal.open({
-    schedules: loader.fetch.items,
-  })
-}
+const tableOptions = useTable({
+  repo: loader,
+  options: {
+    isHidePagination: true,
+  },
+  columns: () => [
+    {
+      accessorKey: 'date',
+      header: 'วันที่',
+      type: COLUMN_TYPES.DATE,
+    },
+    {
+      accessorKey: 'products.name',
+      header: 'สินค้า',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.products?.name || '-',
+    },
+    {
+      accessorKey: 'customers.name',
+      header: 'ลูกค้า',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.customers?.name || '-',
+    },
+    {
+      accessorKey: 'description',
+      header: 'รายละเอียด',
+      type: COLUMN_TYPES.TEXT,
+    },
+    {
+      accessorKey: 'actions',
+      header: '',
+      meta: {
+        class: {
+          th: 'text-right w-[100px]',
+          td: 'text-right w-[100px]',
+        },
+      },
+    },
+  ],
+})
 
 const onEdit = (values: IProjectSchedule) => {
   editModal.open({
-    projectId: props.projectId,
     isEditing: true,
     values: values,
+    projectId: props.projectId,
+    productId: props.progress!.product_id,
+    customerId: props.progress!.customer_id,
     status: () => loader.update.status,
     onSubmit: (payload: IProjectSchedule) => {
       loader.updateRun(String(values.id), {
@@ -55,6 +156,8 @@ const onEdit = (values: IProjectSchedule) => {
 
 const onAdd = () => {
   addModal.open({
+    productId: props.progress!.product_id,
+    customerId: props.progress!.customer_id,
     projectId: props.projectId,
     status: () => loader.add.status,
     onSubmit: (payload: IProjectSchedule) => {
@@ -63,6 +166,7 @@ const onAdd = () => {
           ...payload,
           zone_id: props.zoneId,
           project_id: props.projectId,
+          progress_id: props.progress.id,
         },
       })
     },
@@ -97,16 +201,11 @@ onMounted(() => {
 const fetch = (page = 1) => {
   loader.fetchPage(page, '', {
     params: {
-      zone_id: props.zoneId,
       project_id: props.projectId,
+      progress_id: props.progress.id,
     },
   })
 }
-
-// Watch for zone changes
-watch(() => props.zoneId, () => {
-  fetch()
-})
 
 // Watch for success/error states
 useWatchTrue(
@@ -166,7 +265,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    loader.fetchPage()
+    fetch()
     noti.success({
       title: 'เพิ่มกำหนดการสำเร็จ',
       description: 'คุณได้เพิ่มกำหนดการเรียบร้อยแล้ว',

@@ -26,7 +26,15 @@
         </Badge>
       </template>
       <template #actions-cell="{ row }">
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-2">
+          <Button
+            size="xs"
+            variant="ghost"
+            leading-icon="ph:calendar"
+            @click="onViewSchedule(row.original)"
+          >
+            กำหนดการ
+          </Button>
           <ButtonActionIcon
             icon="ph:pencil-simple"
             color="neutral"
@@ -45,6 +53,7 @@
 
 <script lang="ts" setup>
 import FormModal from '~/components/ProjectProgress/FormModal.vue'
+import ScheduleViewModal from '~/components/ProjectProgress/ScheduleViewModal.vue'
 import type { IProjectProgress } from '~/loaders/project-detail'
 
 const props = defineProps<{
@@ -58,6 +67,7 @@ const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
+const scheduleModal = overlay.create(ScheduleViewModal)
 
 const tableOptions = useTable({
   repo: loader,
@@ -88,8 +98,8 @@ const tableOptions = useTable({
       header: '',
       meta: {
         class: {
-          th: 'text-right w-[100px]',
-          td: 'text-right w-[100px]',
+          th: 'text-right w-[180px]',
+          td: 'text-right w-[180px]',
         },
       },
     },
@@ -104,6 +114,14 @@ const getStatusColor = (status: string): 'warning' | 'success' | 'error' | 'neut
   }
 
   return statusMap[status] || 'neutral'
+}
+
+const onViewSchedule = (values: IProjectProgress) => {
+  scheduleModal.open({
+    progress: values,
+    projectId: props.projectId,
+    zoneId: props.zoneId,
+  })
 }
 
 const onEdit = (values: IProjectProgress) => {

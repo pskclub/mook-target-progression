@@ -69,6 +69,7 @@ const formFields = createFormFields(() => [
         label: item.name,
         value: item.id,
       })),
+      loading: productLoader.fetch.status.isLoading,
     },
   },
   {

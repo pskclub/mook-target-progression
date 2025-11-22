@@ -14,7 +14,6 @@ export interface IProjectProgress {
 export interface IProjectTarget {
   id: number
   product_id: string
-  zone_id: string
   amount: number
   created_at: string
   products?: IProduct
@@ -25,6 +24,8 @@ export interface IProjectSchedule {
   zone_id: string
   customer_id: string
   product_id: string
+  project_id: string
+  progress_id?: number
   description: string
   date: string
   created_at: string
@@ -40,7 +41,7 @@ export const useProjectProgressLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(name), zones(name), customers(name)',
+          select: '*, products(*), zones(*), customers(*)',
           order: 'created_at.desc',
         },
         adapter: createSupabaseAdapter(['products.name', 'zones.name', 'customers.name']),
@@ -55,7 +56,7 @@ export const useProjectTargetLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(name)',
+          select: '*, products(*)',
           order: 'id.desc',
         },
         adapter: createSupabaseAdapter(['products.name']),
@@ -70,7 +71,7 @@ export const useProjectScheduleLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(name), zones(name), customers(name)',
+          select: '*, products(*), zones(*), customers(*)',
           order: 'date.asc',
         },
         adapter: createSupabaseAdapter(['products.name', 'zones.name', 'customers.name']),

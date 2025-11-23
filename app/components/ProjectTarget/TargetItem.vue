@@ -1,12 +1,11 @@
 <template>
-  <Card>
+  <Card class="min-w-[300px]">
     <div class="flex justify-between">
       <div class="flex items-center gap-4">
         <p>สินค้า: {{ row.products?.name }}</p>
         <p>จำนวน: {{ row.amount }}</p>
       </div>
       <DropdownMenu
-        :portal="false"
         :items="[
           [
             {
@@ -32,35 +31,40 @@
         />
       </DropdownMenu>
     </div>
-    <Button
-      v-if="projectProgressesByProductId(row.product_id).length > 0"
-      variant="link"
-      class="px-0"
-      @click="isExpanded = !isExpanded"
-    >
-      {{ isExpanded ? 'ย่อ' : 'ดูรายละเอียด' }} ({{ projectProgressesByProductId(row.product_id).length }})
-    </Button>
     <div
-      v-if="isExpanded"
       class="space-y-2"
     >
-      <Card
-        v-for="progress in projectProgressesByProductId(row.product_id)"
+      <FormFields
+        class="w-full"
+        :options="formFields"
+      />
+
+      <p v-if="projectProgressesByProductId.length">
+        จำนวน {{ projectProgressesByProductId.length }} รายการ
+      </p>
+      <Empty v-else />
+      <div
+        v-for="progress in projectProgressesByProductId"
         :key="progress.id"
         class="space-y-2"
       >
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
-          <p>{{ progress.customers?.name }}</p>
-          <p>
+        <div class="flex flex-col">
+          <p>{{ progress.customers?.name }} </p>
+          <div class="flex gap-2">
+            <Badge
+              variant="subtle"
+            >
+              {{ progress.zones?.name }}
+            </Badge>
             <Badge
               :color="getStatusColor(progress.status)"
               variant="subtle"
             >
               {{ PROJECT_PROGRESS_STATUS_LABEL[progress.status as keyof typeof PROJECT_PROGRESS_STATUS_LABEL] }}
             </Badge>
-          </p>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   </Card>
 </template>
@@ -76,14 +80,51 @@ const emits = defineEmits<{
 const props = defineProps<{
   row: IProjectTarget
   projectProgresses: IProjectProgress[]
+  zones: IZone[]
 }>()
 
 const loader = useProjectTargetLoader(props.row.project_id)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
-const isExpanded = ref(false)
 const editModal = overlay.create(FormModal)
+const form = useForm({
+  validationSchema: toTypedSchema(
+    v.object({
+      zone_id: v.nullish(v.pipe(v.string()), undefined),
+      status: v.nullish(v.pipe(v.string()), undefined),
+    }),
+  ),
+})
+
+const formFields = createFormFields(() => [
+  {
+    type: INPUT_TYPES.SELECT,
+    props: {
+      label: '',
+      name: 'zone_id',
+      placeholder: 'เขต',
+      clearable: true,
+      options: props.zones.map((zone) => ({
+        label: zone.name,
+        value: zone.id,
+      })),
+    },
+  },
+  {
+    type: INPUT_TYPES.SELECT,
+    props: {
+      label: '',
+      name: 'status',
+      placeholder: 'สถานะ',
+      clearable: true,
+      options: Object.values(PROJECT_PROGRESS_STATUS).map((status) => ({
+        label: PROJECT_PROGRESS_STATUS_LABEL[status],
+        value: status,
+      })),
+    },
+  },
+])
 
 const onEdit = (values: IProjectTarget) => {
   editModal.open({
@@ -98,9 +139,19 @@ const onEdit = (values: IProjectTarget) => {
   })
 }
 
-const projectProgressesByProductId = (productId: string) => {
-  return props.projectProgresses.filter((progress) => progress.product_id === productId)
-}
+const projectProgressesByProductId = computed(() => {
+  let filtered = props.projectProgresses.filter((progress) => progress.product_id === props.row.product_id)
+
+  if (form.values.zone_id) {
+    filtered = filtered.filter((progress) => progress.zone_id === form.values.zone_id)
+  }
+
+  if (form.values.status) {
+    filtered = filtered.filter((progress) => progress.status === form.values.status)
+  }
+
+  return filtered
+})
 
 const onDelete = (values: IProjectTarget) => {
   dialog

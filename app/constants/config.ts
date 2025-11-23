@@ -1,13 +1,13 @@
 export const PROJECT_PROGRESS_STATUS = {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
-  CANCELLED: 'CANCELLED',
+  REJECTED: 'REJECTED',
 } as const
 
 export const PROJECT_PROGRESS_STATUS_LABEL = {
   PENDING: 'ขาขึ้น',
   APPROVED: 'ขาลง',
-  CANCELLED: 'ยกเลิก',
+  REJECTED: 'ยกเลิก',
 } as const
 
 export const getStatusColor = (status: string): 'warning' | 'success' | 'error' | 'neutral' => {

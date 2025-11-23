@@ -1,5 +1,10 @@
+export interface IZone {
+  id: string
+  name: string
+}
+
 export const useZonePageLoader = () => {
-  return usePageLoader<any>({
+  return usePageLoader<IZone>({
     baseURL: '/zones',
     getBaseRequestOptions: () => {
       return {
@@ -8,7 +13,7 @@ export const useZonePageLoader = () => {
             '*',
           order: 'id.desc',
         },
-        adapter: createSupabaseAdapter(['name', 'code']),
+        adapter: createSupabaseAdapter(['name']),
       }
     },
   })

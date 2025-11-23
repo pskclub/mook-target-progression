@@ -160,14 +160,16 @@ const onAdd = () => {
     customerId: props.progress!.customer_id,
     projectId: props.projectId,
     status: () => loader.add.status,
-    onSubmit: (payload: IProjectSchedule) => {
+    onSubmit: (payload: IProjectSchedule[]) => {
+      const payloadItems = payload.map((item) => ({
+        ...item,
+        zone_id: props.zoneId,
+        project_id: props.projectId,
+        progress_id: props.progress.id,
+      }))
+
       loader.addRun({
-        data: {
-          ...payload,
-          zone_id: props.zoneId,
-          project_id: props.projectId,
-          progress_id: props.progress.id,
-        },
+        data: payloadItems,
       })
     },
   })

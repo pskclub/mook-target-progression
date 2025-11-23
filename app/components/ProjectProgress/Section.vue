@@ -13,6 +13,10 @@
         เพิ่มการดำเนินการ
       </Button>
     </div>
+    <FormFields
+      :options="formFields"
+      class="flex gap-4"
+    />
     <Table
       v-model:column-visibility="columnVisibility"
       :options="tableOptions"
@@ -72,6 +76,16 @@ const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const scheduleModal = overlay.create(ScheduleViewModal)
+const form = useForm({
+  validationSchema: toTypedSchema(
+    v.object({
+      product_id: v.nullish(v.string()),
+      customer_id: v.nullish(v.string()),
+      status: v.nullish(v.string()),
+    }),
+  ),
+})
+
 const columnVisibility = ref({
   products_name: true,
   customers_name: true,
@@ -80,10 +94,97 @@ const columnVisibility = ref({
   zone: !props.zoneId,
 })
 
-const tableOptions = useTable({
+const products = computed(() => {
+  const uniqueProducts = loader.fetch.items.reduce((acc, target) => {
+    if (target.products && !acc.some((p) => p.id === target.products!.id)) {
+      acc.push(target.products)
+    }
+
+    return acc
+  }, [] as IProduct[])
+
+  return uniqueProducts
+})
+
+const customers = computed(() => {
+  const uniqueCustomers = loader.fetch.items.reduce((acc, target) => {
+    if (target.customers && !acc.some((c) => c.id === target.customers!.id)) {
+      acc.push(target.customers)
+    }
+
+    return acc
+  }, [] as ICustomer[])
+
+  return uniqueCustomers
+})
+
+const formFields = createFormFields(() => [
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'product_id',
+      placeholder: 'Product',
+      clearable: true,
+      options: products.value.map((product) => ({
+        label: product.name,
+        value: product.id,
+      })),
+    },
+  },
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'customer_id',
+      placeholder: 'Customer',
+      clearable: true,
+      options: customers.value.map((customer) => ({
+        label: customer.name,
+        value: customer.id,
+      })),
+    },
+  },
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'status',
+      placeholder: 'สถานะ',
+      clearable: true,
+      options: Object.values(PROJECT_PROGRESS_STATUS).map((status) => ({
+        label: PROJECT_PROGRESS_STATUS_LABEL[status],
+        value: status,
+      })),
+    },
+  },
+])
+
+const tableOptions = useTable<IProjectProgress>({
   repo: loader,
   options: {
     isHidePagination: true,
+  },
+  transformItems: (items) => {
+    // filter by product_id, customer_id, status
+    return items.filter((item) => {
+      if (form.values.product_id && item.product_id !== form.values.product_id) {
+        return false
+      }
+
+      if (form.values.customer_id && item.customer_id !== form.values.customer_id) {
+        return false
+      }
+
+      if (form.values.status && item.status !== form.values.status) {
+        return false
+      }
+
+      return true
+    })
   },
   columns: () => [
     {

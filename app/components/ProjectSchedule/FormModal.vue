@@ -54,23 +54,31 @@ const targetLoader = useProjectTargetLoader(props.projectId)
 
 const form = useForm({
   initialValues: props.values
-    ? {
-      ...props.values,
-      date: props.values.date ? props.values.date.split('T')[0] : new Date().toISOString().split('T')[0],
-    }
+    ? props.values
     : {
-      date: new Date().toISOString().split('T')[0],
       product_id: props.productId,
       customer_id: props.customerId,
     },
-  validationSchema: toTypedSchema(
-    v.object({
-      date: v.pipe(v.string(), v.nonEmpty('กรุณาระบุวันที่')),
-      product_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
-      customer_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
-      description: v.optional(v.string(), ''),
-    }),
-  ),
+  validationSchema: props.values
+    ? toTypedSchema(
+      v.object({
+        date: v.pipe(v.string(), v.nonEmpty('กรุณาระบุวันที่')),
+        product_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
+        customer_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
+        description: v.optional(v.string(), ''),
+      }),
+    )
+    : toTypedSchema(
+      v.object({
+        dates: v.pipe(v.object({
+          start: v.union([v.date(), v.string()]),
+          end: v.union([v.date(), v.string()]),
+        })),
+        product_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
+        customer_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
+        description: v.optional(v.string(), ''),
+      }),
+    ),
 })
 
 const formFields = createFormFields(() => [
@@ -105,9 +113,19 @@ const formFields = createFormFields(() => [
   },
   {
     type: INPUT_TYPES.DATE,
+    isHide: !props.isEditing,
     props: {
       label: 'วันที่',
       name: 'date',
+      required: true,
+    },
+  },
+  {
+    type: INPUT_TYPES.DATE_RANGE,
+    isHide: props.isEditing,
+    props: {
+      label: 'ช่วงวันที่',
+      name: 'dates',
       required: true,
     },
   },
@@ -121,8 +139,25 @@ const formFields = createFormFields(() => [
   },
 ])
 
-const onSubmit = form.handleSubmit((values) => {
-  props.onSubmit(values)
+const onSubmit = form.handleSubmit((values: any) => {
+  if (values.dates) {
+    const payloadItems = []
+
+    for (let i = new Date(values.dates.start); i <= new Date(values.dates.end); i.setDate(i.getDate() + 1)) {
+      const payload = {
+        ...values,
+        date: i.toISOString().split('T')[0],
+      }
+
+      delete payload.dates
+
+      payloadItems.push(payload)
+    }
+
+    props.onSubmit(payloadItems)
+  } else {
+    props.onSubmit(values)
+  }
 })
 
 // Load data

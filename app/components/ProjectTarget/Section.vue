@@ -12,20 +12,24 @@
         เพิ่มสินค้า
       </Button>
     </div>
-    <FlexDeck
-      :options="tableOptions"
-      container-class="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7"
-      @pageChange="loader.fetchPageChange"
-      @search="loader.fetchSearch"
-    >
-      <template #default="{ row }: { row: IProjectTarget }">
-        <TargetItem
-          :row="row"
-          :project-progresses="props.projectProgresses"
-          @fetch="fetch"
-        />
-      </template>
-    </FlexDeck>
+
+    <div class="max-w-full overflow-x-scroll px-1 py-2">
+      <FlexDeck
+        :options="tableOptions"
+        container-class="flex gap-4"
+        @pageChange="loader.fetchPageChange"
+        @search="loader.fetchSearch"
+      >
+        <template #default="{ row }: { row: IProjectTarget }">
+          <TargetItem
+            :row="row"
+            :project-progresses="props.projectProgresses"
+            :zones="zoneLoader.fetch.items"
+            @fetch="fetch"
+          />
+        </template>
+      </FlexDeck>
+    </div>
   </div>
 </template>
 
@@ -43,6 +47,7 @@ const loader = useProjectTargetLoader(props.projectId)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
+const zoneLoader = useZonePageLoader()
 
 const addModal = overlay.create(FormModal)
 
@@ -69,7 +74,9 @@ const onAdd = () => {
 
 // Load data
 loader.fetchSetLoading()
+zoneLoader.fetchSetLoading()
 onMounted(() => {
+  zoneLoader.fetchPage()
   fetch()
 })
 

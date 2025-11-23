@@ -34,5 +34,10 @@ export default defineAppConfig({
         td: 'text-[#222222] border-r border-[#EAECF0] last:border-0',
       },
     },
+    selectMenu: {
+      defaultVariants: {
+        size: 'md',
+      },
+    },
   },
 })

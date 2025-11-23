@@ -31,7 +31,7 @@
           />
         </template>
       </DashboardSidebar>
-      <div class="w-full bg-gray-50">
+      <div class="w-full overflow-x-scroll bg-gray-50">
         <main
           :class="[
             'mx-auto min-h-full w-full flex-1 px-6 py-10 lg:px-8',

@@ -107,13 +107,15 @@ const onAdd = () => {
   addModal.open({
     projectId: props.projectId,
     status: () => loader.add.status,
-    onSubmit: (payload: IProjectSchedule) => {
+    onSubmit: (payload: IProjectSchedule[]) => {
+      const payloadItems = payload.map((item) => ({
+        ...item,
+        zone_id: props.zoneId,
+        project_id: props.projectId,
+      }))
+
       loader.addRun({
-        data: {
-          ...payload,
-          zone_id: props.zoneId,
-          project_id: props.projectId,
-        },
+        data: payloadItems,
       })
     },
   })

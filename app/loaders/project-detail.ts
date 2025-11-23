@@ -6,9 +6,9 @@ export interface IProjectProgress {
   status: string
   description: string
   created_at: string
-  products?: { name: string }
-  zones?: { name: string }
-  customers?: { name: string }
+  products?: IProduct
+  zones?: IZone
+  customers?: ICustomer
 }
 
 export interface IProjectTarget {

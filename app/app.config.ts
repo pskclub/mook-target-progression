@@ -11,11 +11,21 @@ export default defineAppConfig({
     site_name: 'Mook Target Progression',
   },
   ui: {
+    card: {
+      slots: {
+        body: 'sm:p-2 sm:px-3 p-2',
+      },
+    },
     dialog: {
       slots: {
         base: [
           'bg-[url(/dialog-bg.png)] bg-no-repeat bg-top-left bg-size-[220px]',
         ],
+      },
+    },
+    tabs: {
+      slots: {
+        content: 'py-2 px-3',
       },
     },
     table: {

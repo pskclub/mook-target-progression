@@ -75,5 +75,5 @@
 }
 
 body {
-  @apply bg-[var(--color-background)];
+  @apply bg-[var(--color-background)] text-sm;
 }

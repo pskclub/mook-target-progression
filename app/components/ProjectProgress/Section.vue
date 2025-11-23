@@ -5,6 +5,7 @@
         การดำเนินการ
       </h2>
       <Button
+        v-if="props.zoneId"
         trailing-icon="ph:plus"
         size="sm"
         @click="onAdd"
@@ -13,6 +14,7 @@
       </Button>
     </div>
     <Table
+      v-model:column-visibility="columnVisibility"
       :options="tableOptions"
       @pageChange="loader.fetchPageChange"
       @search="loader.fetchSearch"
@@ -55,10 +57,12 @@
 import FormModal from '~/components/ProjectProgress/FormModal.vue'
 import ScheduleViewModal from '~/components/ProjectProgress/ScheduleViewModal.vue'
 import type { IProjectProgress } from '~/loaders/project-detail'
+import { getStatusColor } from '~/constants/config'
 
 const props = defineProps<{
   projectId: string
-  zoneId: string
+  productId?: string
+  zoneId?: string
 }>()
 
 const loader = useProjectProgressLoader(props.projectId)
@@ -68,9 +72,19 @@ const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const scheduleModal = overlay.create(ScheduleViewModal)
+const columnVisibility = ref({
+  products_name: true,
+  customers_name: true,
+  status: true,
+  actions: true,
+  zone: !props.zoneId,
+})
 
 const tableOptions = useTable({
   repo: loader,
+  options: {
+    isHidePagination: true,
+  },
   columns: () => [
     {
       accessorKey: 'products.name',
@@ -89,6 +103,14 @@ const tableOptions = useTable({
       }: any) => row.original.customers?.name || '-',
     },
     {
+      accessorKey: 'zone',
+      header: 'Zone',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.zones?.name || '-',
+    },
+    {
       accessorKey: 'status',
       header: 'Status',
       type: COLUMN_TYPES.TEXT,
@@ -105,16 +127,6 @@ const tableOptions = useTable({
     },
   ],
 })
-
-const getStatusColor = (status: string): 'warning' | 'success' | 'error' | 'neutral' => {
-  const statusMap: Record<string, 'warning' | 'success' | 'error' | 'neutral'> = {
-    PENDING: 'warning',
-    APPROVED: 'success',
-    REJECTED: 'error',
-  }
-
-  return statusMap[status] || 'neutral'
-}
 
 const onViewSchedule = (values: IProjectProgress) => {
   scheduleModal.open({
@@ -182,11 +194,22 @@ onMounted(() => {
 })
 
 const fetch = (page = 1) => {
+  const params = {
+    zone_id: props.zoneId,
+    project_id: props.projectId,
+    product_id: props.productId,
+  }
+
+  if (!props.zoneId) {
+    delete params.zone_id
+  }
+
+  if (!props.productId) {
+    delete params.product_id
+  }
+
   loader.fetchPage(page, '', {
-    params: {
-      zone_id: props.zoneId,
-      project_id: props.projectId,
-    },
+    params,
   })
 }
 

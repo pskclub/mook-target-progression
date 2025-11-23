@@ -14,6 +14,7 @@ export interface IProjectProgress {
 export interface IProjectTarget {
   id: number
   product_id: string
+  project_id: string
   amount: number
   created_at: string
   products?: IProduct

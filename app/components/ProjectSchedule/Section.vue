@@ -1,17 +1,66 @@
 <template>
-  <div class="mb-8">
-    <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-bold">
-        กำหนดการรวม
-      </h2>
+  <div class="mb-4 flex items-center justify-between">
+    <div class="flex gap-2">
+      <Button
+        :variant="viewMode === 'calendar' ? 'solid' : 'ghost'"
+        size="sm"
+        leading-icon="ph:calendar"
+        @click="viewMode = 'calendar'"
+      >
+        ปฏิทิน
+      </Button>
+      <Button
+        :variant="viewMode === 'table' ? 'solid' : 'ghost'"
+        size="sm"
+        leading-icon="ph:table"
+        @click="viewMode = 'table'"
+      >
+        ตาราง
+      </Button>
     </div>
-    <Card>
+    <Button
+      v-if="zoneId"
+      trailing-icon="ph:plus"
+      size="sm"
+      @click="onAdd"
+    >
+      เพิ่มกำหนดการ
+    </Button>
+  </div>
+
+  <Card>
+    <!-- Table View -->
+    <div v-if="viewMode === 'table'">
+      <Table
+        :options="tableOptions"
+        @pageChange="loader.fetchPageChange"
+        @search="loader.fetchSearch"
+      >
+        <template #actions-cell="{ row }">
+          <div class="flex justify-end">
+            <ButtonActionIcon
+              icon="ph:pencil-simple"
+              color="neutral"
+              @click="onEdit(row.original)"
+            />
+            <ButtonActionIcon
+              icon="ph:trash"
+              color="error"
+              @click="onDelete(row.original)"
+            />
+          </div>
+        </template>
+      </Table>
+    </div>
+
+    <!-- Calendar View -->
+    <div v-else>
       <CalendarView
         :schedules="loader.fetch.items"
-        @onScheduleClick="onEdit"
+        @scheduleClick="onEdit"
       />
-    </Card>
-  </div>
+    </div>
+  </Card>
 </template>
 
 <script lang="ts" setup>
@@ -22,7 +71,7 @@ import type { IProjectSchedule } from '~/loaders/project-detail'
 
 const props = defineProps<{
   projectId: string
-  zoneId: string
+  zoneId?: string
 }>()
 
 const loader = useProjectScheduleLoader(props.projectId)
@@ -32,6 +81,7 @@ const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const calendarModal = overlay.create(CalendarModal)
+const viewMode = ref<'table' | 'calendar'>('calendar')
 
 const showCalendar = () => {
   calendarModal.open({
@@ -95,11 +145,16 @@ onMounted(() => {
 })
 
 const fetch = (page = 1) => {
+  const params: any = {
+    project_id: props.projectId,
+  }
+
+  if (props.zoneId) {
+    params.zone_id = props.zoneId
+  }
+
   loader.fetchPage(page, '', {
-    params: {
-      zone_id: props.zoneId,
-      project_id: props.projectId,
-    },
+    params,
   })
 }
 
@@ -188,4 +243,49 @@ useWatchTrue(
     })
   },
 )
+
+const tableOptions = useTable({
+  repo: loader,
+  options: {
+    isHidePagination: true,
+  },
+  columns: () => [
+    {
+      accessorKey: 'date',
+      header: 'วันที่',
+      type: COLUMN_TYPES.DATE,
+    },
+    {
+      accessorKey: 'products.name',
+      header: 'สินค้า',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.products?.name || '-',
+    },
+    {
+      accessorKey: 'customers.name',
+      header: 'ลูกค้า',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.customers?.name || '-',
+    },
+    {
+      accessorKey: 'description',
+      header: 'รายละเอียด',
+      type: COLUMN_TYPES.TEXT,
+    },
+    {
+      accessorKey: 'actions',
+      header: '',
+      meta: {
+        class: {
+          th: 'text-right w-[100px]',
+          td: 'text-right w-[100px]',
+        },
+      },
+    },
+  ],
+})
 </script>

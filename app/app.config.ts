@@ -31,7 +31,7 @@ export default defineAppConfig({
     table: {
       slots: {
         th: 'text-[#222222] whitespace-nowrap border-r border-[#EAECF0] last:border-0 bg-[#F9FAFB]',
-        td: 'text-[#222222] border-r border-[#EAECF0] last:border-0',
+        td: 'text-[#222222] border-r border-[#EAECF0] last:border-0 p-0 px-2',
       },
     },
     selectMenu: {

@@ -85,7 +85,7 @@
               <button
                 v-for="zone in zoneLoader.fetch.items"
                 :key="zone.id"
-                class="hover:bg-primary-200 w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
+                class="hover:bg-primary-200 hover:text-black w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
                 :class="
                   selectedZoneId === zone.id
                     ? 'bg-primary text-white hover:opacity-80'

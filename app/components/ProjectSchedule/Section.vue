@@ -1,4 +1,10 @@
 <template>
+  <!-- Filter section when zoneId is not provided -->
+  <FormFields
+    v-if="!zoneId"
+    :options="formFields"
+    class="flex gap-4"
+  />
   <div class="mb-4 flex items-center justify-between">
     <div class="flex gap-2">
       <Button
@@ -28,60 +34,51 @@
     </Button>
   </div>
 
-  <!-- Filter section when zoneId is not provided -->
-  <FormFields
-    v-if="!zoneId"
-    :options="formFields"
-    class="mb-4 flex gap-4"
-  />
+  <!-- Table View -->
+  <div v-if="viewMode === 'table'">
+    <TableSimple
+      v-model:column-visibility="columnVisibility"
+      :options="tableOptions"
+    >
+      <template #zone-cell="{ row }">
+        <Badge
+          variant="subtle"
+          class="text-white"
+          :style="`background-color: ${row.original.zones?.color};`"
+        >
+          {{ row.original.zones?.name }}
+        </Badge>
+      </template>
+      <template #actions-cell="{ row }">
+        <div class="flex justify-end">
+          <ButtonActionIcon
+            v-if="row.original.histories?.length > 0"
+            icon="ph:clock-counter-clockwise"
+            color="error"
+            @click="onViewHistory(row.original)"
+          />
+          <ButtonActionIcon
+            icon="ph:pencil-simple"
+            color="neutral"
+            @click="onEdit(row.original)"
+          />
+          <ButtonActionIcon
+            icon="ph:trash"
+            color="error"
+            @click="onDelete(row.original)"
+          />
+        </div>
+      </template>
+    </TableSimple>
+  </div>
 
-  <Card>
-    <!-- Table View -->
-    <div v-if="viewMode === 'table'">
-      <TableSimple
-        v-model:column-visibility="columnVisibility"
-        :options="tableOptions"
-      >
-        <template #zone-cell="{ row }">
-          <Badge
-            variant="subtle"
-            class="text-white"
-            :style="`background-color: ${row.original.zones?.color};`"
-          >
-            {{ row.original.zones?.name }}
-          </Badge>
-        </template>
-        <template #actions-cell="{ row }">
-          <div class="flex justify-end">
-            <ButtonActionIcon
-              v-if="row.original.histories?.length > 0"
-              icon="ph:clock-counter-clockwise"
-              color="error"
-              @click="onViewHistory(row.original)"
-            />
-            <ButtonActionIcon
-              icon="ph:pencil-simple"
-              color="neutral"
-              @click="onEdit(row.original)"
-            />
-            <ButtonActionIcon
-              icon="ph:trash"
-              color="error"
-              @click="onDelete(row.original)"
-            />
-          </div>
-        </template>
-      </TableSimple>
-    </div>
-
-    <!-- Calendar View -->
-    <div v-else>
-      <CalendarView
-        :schedules="scheduleItems"
-        @scheduleClick="onEdit"
-        @historyClick="onViewHistory"
-      />
-    </div>
+  <!-- Calendar View -->
+  <Card v-else>
+    <CalendarView
+      :schedules="scheduleItems"
+      @scheduleClick="onEdit"
+      @historyClick="onViewHistory"
+    />
   </Card>
 </template>
 

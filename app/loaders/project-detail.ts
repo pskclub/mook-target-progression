@@ -36,9 +36,9 @@ export interface IProjectSchedule {
     description: string
   }[]
   created_at: string
-  products?: { name: string }
-  zones?: { name: string }
-  customers?: { name: string }
+  products?: IProduct
+  zones?: IZone
+  customers?: ICustomer
 }
 
 // Note: กำหนดการ (Schedule) uses the same project_progresses table

@@ -85,11 +85,14 @@
         >
           <!-- Row Label -->
           <div class="sticky left-0 z-10 w-52 shrink-0 border-r border-gray-300 bg-white p-2">
-            <div class="flex items-center gap-1">
-              <div class="text-sm">
+            <div class="flex items-center gap-2">
+              <Badge
+                variant="subtle"
+                class="text-white"
+                :style="`background-color: ${row.zoneColor};`"
+              >
                 {{ row.zoneName }}
-              </div>
-              <p>•</p>
+              </Badge>
               <div
                 class="truncate text-sm"
                 :title="row.customerName"
@@ -98,7 +101,7 @@
               </div>
             </div>
             <div
-              class="truncate text-sm font-medium text-gray-500"
+              class="mt-1 truncate text-sm font-medium text-gray-500"
               :title="row.productName"
             >
               {{ row.productName }}
@@ -282,6 +285,7 @@ interface TimelineRow {
   productName: string
   customerName: string
   zoneName: string
+  zoneColor: string
   items: CalendarItem[]
 }
 
@@ -608,6 +612,7 @@ const timelineRows = computed<TimelineRow[]>(() => {
         productName: schedule.products?.name || '-',
         customerName: schedule.customers?.name || '-',
         zoneName: schedule.zones?.name || '-',
+        zoneColor: schedule.zones?.color || '#fff',
         items: [],
       })
     }

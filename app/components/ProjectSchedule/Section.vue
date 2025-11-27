@@ -35,6 +35,15 @@
         v-model:column-visibility="columnVisibility"
         :options="tableOptions"
       >
+        <template #zone-cell="{ row }">
+          <Badge
+            variant="subtle"
+            class="text-white"
+            :style="`background-color: ${row.original.zones?.color};`"
+          >
+            {{ row.original.zones?.name }}
+          </Badge>
+        </template>
         <template #actions-cell="{ row }">
           <div class="flex justify-end">
             <ButtonActionIcon

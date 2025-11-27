@@ -57,6 +57,8 @@
           <div class="flex gap-2">
             <Badge
               variant="subtle"
+              class="text-white"
+              :style="`background-color: ${progress.zones?.color};`"
             >
               {{ progress.zones?.name }}
             </Badge>

@@ -64,20 +64,33 @@
           <SelectMenu
             v-model="selectedZoneId"
             class="w-[300px]"
-            :items="zoneLoader.fetch.items.map((zone) => ({
-              label: `${zone.name} ${project.find.item?.project_progresses?.
-                filter((item: any) => item.zone_id === zone.id)?.length || 0 > 0
-                ? `(${project.find.item?.project_progresses?.
-                  filter((item: any) => item.zone_id === zone.id)?.length || 0})`
-                : ''}`,
-              value: zone.id,
-            }))"
+            :items="zoneOptions"
             size="xl"
             :loading="zoneLoader.fetch.status.isLoading"
             placeholder="เลือกเขต"
             value-key="value"
             label-key="label"
-          />
+          >
+            <template #item="{ item }">
+              <p
+                :style="{
+                  color: item.color,
+                }"
+              >
+                {{ item.label }}
+              </p>
+            </template>
+
+            <template #default="{ modelValue }">
+              <p
+                :style="{
+                  color: zoneOptions.find((item) => item.value === modelValue)?.color,
+                }"
+              >
+                {{ zoneOptions.find((item) => item.value === modelValue)?.label || '-' }}
+              </p>
+            </template>
+          </SelectMenu>
         </div>
         <!-- Vertical Zone Tabs -->
         <div class="flex-1">
@@ -163,28 +176,17 @@ const editModal = overlay.create(FormModal)
 project.findSetLoading()
 zoneLoader.fetchSetLoading()
 
-const textToHexColor = (text: string): string => {
-  // Simple hash function
-  let hash = 0
-
-  for (let i = 0; i < text.length; i++) {
-    hash = text.charCodeAt(i) + ((hash << 5) - hash)
-    hash = hash & hash // Convert to 32-bit integer
-  }
-
-  // Convert hash to pastel color (high lightness, low saturation)
-  let color = '#'
-
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xFF
-    // Mix with white (255) to create pastel - use 70% white, 30% base color
-    const pastel = Math.floor(value * 0.3 + 255 * 0.7)
-
-    color += pastel.toString(16).padStart(2, '0')
-  }
-
-  return color
-}
+const zoneOptions = computed(() => {
+  return zoneLoader.fetch.items.map((zone) => ({
+    label: `${zone.name} ${project.find.item?.project_progresses
+      ?.filter((item: any) => item.zone_id === zone.id)?.length || 0 > 0
+      ? `(${project.find.item?.project_progresses
+        ?.filter((item: any) => item.zone_id === zone.id)?.length || 0})`
+      : ''}`,
+    value: zone.id,
+    color: zone.color,
+  }))
+})
 
 onMounted(() => {
   project.findRun(projectId, {

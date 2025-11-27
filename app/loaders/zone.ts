@@ -1,6 +1,7 @@
 export interface IZone {
   id: string
   name: string
+  color: string
 }
 
 export const useZonePageLoader = defineStore('zone', () => {

@@ -1,5 +1,5 @@
 <template>
-  <div class="pb-6">
+  <div class="space-y-6 pb-6">
     <!-- Summary Stats Cards -->
     <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
       <Card class="text-center">

@@ -47,7 +47,7 @@
         <template #header>
           <DashboardNavbar
             :ui="{
-              title: 'text-lg',
+              title: 'text-3xl',
             }"
             :title="app.pageMeta.title"
           >

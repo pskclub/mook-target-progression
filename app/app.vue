@@ -16,12 +16,20 @@
         }"
       >
         <template #header="{ collapsed }">
-          <p
-            v-if="!collapsed"
-            class="text-xl font-bold"
-          >
-            Mook Progression
-          </p>
+          <div class="flex w-full items-center justify-center">
+            <img
+              v-if="collapsed"
+              src="/favicon.ico"
+              alt=""
+              class="w-[30px]&quot;"
+            />
+            <img
+              v-else
+              src="/logo.png"
+              alt="Mook Progression"
+              class="h-[50px]"
+            />
+          </div>
         </template>
 
         <template #default="{ collapsed }">

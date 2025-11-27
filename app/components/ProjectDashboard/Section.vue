@@ -601,6 +601,8 @@ const zoneProductAchievementStats = computed(() => {
       }
     }).sort((a, b) => b.percentage - a.percentage)
 
+    const totalAchievedAmount = products.reduce((sum, p) => sum + p.achieved, 0)
+
     return {
       zoneId: zone.id,
       zoneName: zone.name,
@@ -608,7 +610,8 @@ const zoneProductAchievementStats = computed(() => {
       products,
       achievedCount: products.filter((p) => p.isAchieved).length,
       totalCount: products.length,
+      totalAchievedAmount,
     }
-  }).sort((a, b) => b.achievedCount - a.achievedCount)
+  }).sort((a, b) => b.totalAchievedAmount - a.totalAchievedAmount)
 })
 </script>

@@ -65,6 +65,13 @@
           :project-id="projectId"
         />
       </template>
+
+      <template #schedule>
+        <ProjectScheduleSection
+          :project-id="projectId"
+          @refresh="onRefresh"
+        />
+      </template>
       <template #zone>
         <div class="mb-6 flex items-center gap-4">
           <p class="text-xl font-bold">
@@ -151,12 +158,6 @@
             </Card>
           </div>
         </div>
-      </template>
-      <template #schedule>
-        <ProjectScheduleSection
-          :project-id="projectId"
-          @refresh="onRefresh"
-        />
       </template>
     </Tabs>
   </StatusBox>

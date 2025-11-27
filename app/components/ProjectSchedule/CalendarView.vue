@@ -143,7 +143,7 @@
         <span>มีกำหนดการ</span>
       </div>
       <div class="flex items-center gap-1">
-        <div class="border-error-300 bg-error-100 flex h-4 w-4 items-center justify-center rounded border">
+        <div class="border-error-300 bg-error-100 text-error flex h-4 w-4 items-center justify-center rounded border">
           ⏱
         </div>
         <span class="text-error">นัดที่ถูกเลื่อน</span>

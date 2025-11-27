@@ -13,7 +13,7 @@ export default defineAppConfig({
   ui: {
     card: {
       slots: {
-        body: 'sm:p-2 sm:px-3 p-2',
+        body: 'sm:p-2 sm:px-3 sm:py-4 p-2',
       },
     },
     dialog: {

@@ -95,110 +95,106 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <!-- Upcoming Schedules -->
       <Card>
-        <div class="p-4">
-          <div class="mb-4 flex items-center gap-2">
-            <Icon
-              name="i-heroicons-calendar"
-              class="text-primary size-5"
-            />
-            <h3 class="text-lg font-bold">
-              กำหนดการที่ใกล้ถึง (7 วัน)
-            </h3>
-          </div>
-          <div class="space-y-2">
-            <Card
-              v-for="schedule in upcomingSchedules"
-              :key="schedule.id"
-              :ui="{
-                body: 'flex items-center justify-between',
-              }"
-            >
-              <div class="flex items-center gap-3">
-                <div
-                  class="flex size-10 flex-col items-center justify-center rounded-lg bg-blue-100 text-blue-600"
-                >
-                  <span class="text-xs font-medium">{{ schedule.dayLabel }}</span>
-                  <span class="text-sm font-bold">{{ schedule.dateNum }}</span>
-                </div>
-                <div>
-                  <p class="text-sm font-medium">
-                    {{ schedule.customers?.name || '-' }}
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    {{ schedule.products?.name }} • {{ schedule.zones?.name }}
-                  </p>
-                  <p class="text-xs whitespace-pre-line text-gray-500">
-                    {{ schedule.description }}
-                  </p>
-                </div>
-              </div>
-              <Badge
-                :color="schedule.daysLeft === 0 ? 'error' : schedule.daysLeft <= 2 ? 'warning' : 'info'"
-                variant="subtle"
-              >
-                {{ schedule.daysLeft === 0 ? 'วันนี้' : `อีก ${schedule.daysLeft} วัน` }}
-              </Badge>
-            </card>
-          </div>
-          <div
-            v-if="upcomingSchedules.length === 0"
-            class="py-4 text-center text-gray-500"
+        <div class="mb-4 flex items-center gap-2">
+          <Icon
+            name="i-heroicons-calendar"
+            class="text-primary size-5"
+          />
+          <h3 class="text-lg font-bold">
+            กำหนดการที่ใกล้ถึง (7 วัน)
+          </h3>
+        </div>
+        <div class="space-y-2">
+          <Card
+            v-for="schedule in upcomingSchedules"
+            :key="schedule.id"
+            :ui="{
+              body: 'flex items-center justify-between',
+            }"
           >
-            ไม่มีกำหนดการใน 7 วันข้างหน้า
-          </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex size-10 flex-col items-center justify-center rounded-lg bg-blue-100 text-blue-600"
+              >
+                <span class="text-xs font-medium">{{ schedule.dayLabel }}</span>
+                <span class="text-sm font-bold">{{ schedule.dateNum }}</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium">
+                  {{ schedule.customers?.name || '-' }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ schedule.products?.name }} • {{ schedule.zones?.name }}
+                </p>
+                <p class="text-xs whitespace-pre-line text-gray-500">
+                  {{ schedule.description }}
+                </p>
+              </div>
+            </div>
+            <Badge
+              :color="schedule.daysLeft === 0 ? 'error' : schedule.daysLeft <= 2 ? 'warning' : 'info'"
+              variant="subtle"
+            >
+              {{ schedule.daysLeft === 0 ? 'วันนี้' : `อีก ${schedule.daysLeft} วัน` }}
+            </Badge>
+          </card>
+        </div>
+        <div
+          v-if="upcomingSchedules.length === 0"
+          class="py-4 text-center text-gray-500"
+        >
+          ไม่มีกำหนดการใน 7 วันข้างหน้า
         </div>
       </Card>
 
       <!-- Zones Need Attention -->
       <Card>
-        <div class="p-4">
-          <div class="mb-4 flex items-center gap-2">
-            <Icon
-              name="i-heroicons-exclamation-triangle"
-              class="size-5 text-amber-500"
-            />
-            <h3 class="text-lg font-bold">
-              เขตที่ต้องเร่ง
-            </h3>
-          </div>
-          <div class="space-y-2">
-            <div
-              v-for="zone in zonesNeedAttention"
-              :key="zone.zoneId"
-              class="rounded-lg border border-amber-200 bg-amber-50 p-3"
-            >
-              <div class="flex items-center justify-between">
-                <Badge
-                  variant="subtle"
-                  class="text-white"
-                  :style="`background-color: ${zone.zoneColor};`"
-                >
-                  {{ zone.zoneName }}
-                </Badge>
-                <span class="text-sm font-medium text-amber-700">
-                  ขาดอีก {{ zone.remaining }} รายการ
-                </span>
-              </div>
-              <div class="mt-2 h-2 overflow-hidden rounded-full bg-amber-200">
-                <div
-                  class="h-full rounded-full bg-amber-500 transition-all"
-                  :style="`width: ${zone.percentage}%;`"
-                />
-              </div>
-              <p class="mt-1 text-xs text-amber-600">
-                ความคืบหน้า {{ zone.achieved }}/{{ zone.target }} ({{ zone.percentage.toFixed(0) }}%)
-              </p>
+        <div class="mb-4 flex items-center gap-2">
+          <Icon
+            name="i-heroicons-exclamation-triangle"
+            class="size-5 text-amber-500"
+          />
+          <h3 class="text-lg font-bold">
+            เขตที่ต้องเร่ง
+          </h3>
+        </div>
+        <div class="space-y-2">
+          <div
+            v-for="zone in zonesNeedAttention"
+            :key="zone.zoneId"
+            class="rounded-lg border border-amber-200 bg-amber-50 p-3"
+          >
+            <div class="flex items-center justify-between">
+              <Badge
+                variant="subtle"
+                class="text-white"
+                :style="`background-color: ${zone.zoneColor};`"
+              >
+                {{ zone.zoneName }}
+              </Badge>
+              <span class="text-sm font-medium text-amber-700">
+                ขาดอีก {{ zone.remaining }} รายการ
+              </span>
             </div>
-            <div
-              v-if="zonesNeedAttention.length === 0"
-              class="py-4 text-center text-green-600"
-            >
-              <Icon
-                name="i-heroicons-check-circle"
-                class="mx-auto mb-2 size-8"
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-amber-200">
+              <div
+                class="h-full rounded-full bg-amber-500 transition-all"
+                :style="`width: ${zone.percentage}%;`"
               />
-              <p>ทุกเขตดำเนินการได้ดี!</p>
             </div>
+            <p class="mt-1 text-xs text-amber-600">
+              ความคืบหน้า {{ zone.achieved }}/{{ zone.target }} ({{ zone.percentage.toFixed(0) }}%)
+            </p>
+          </div>
+          <div
+            v-if="zonesNeedAttention.length === 0"
+            class="py-4 text-center text-green-600"
+          >
+            <Icon
+              name="i-heroicons-check-circle"
+              class="mx-auto mb-2 size-8"
+            />
+            <p>ทุกเขตดำเนินการได้ดี!</p>
           </div>
         </div>
       </Card>
@@ -207,109 +203,103 @@
     <div class="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
       <!-- Progress by Zone -->
       <Card>
-        <div class="p-4">
-          <h3 class="mb-4 text-lg font-bold">
-            การดำเนินการตามเขต
-          </h3>
-          <div class="space-y-3">
-            <div
-              v-for="zone in zoneStats"
-              :key="zone.id"
-              class="flex items-center gap-4"
+        <h3 class="mb-4 text-lg font-bold">
+          การดำเนินการตามเขต
+        </h3>
+        <div class="space-y-3">
+          <div
+            v-for="zone in zoneStats"
+            :key="zone.id"
+            class="flex items-center gap-4"
+          >
+            <Badge
+              variant="subtle"
+              class="w-24 justify-center text-white"
+              :style="`background-color: ${zone.color};`"
             >
-              <Badge
-                variant="subtle"
-                class="w-24 justify-center text-white"
-                :style="`background-color: ${zone.color};`"
-              >
-                {{ zone.name }}
-              </Badge>
-              <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  class="bg-primary h-full rounded-full transition-all"
-                  :style="`width: ${zone.percentage}%;`"
-                />
-              </div>
-              <span class="w-16 text-right text-sm font-medium">{{ zone.count }} รายการ</span>
+              {{ zone.name }}
+            </Badge>
+            <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
+              <div
+                class="bg-primary h-full rounded-full transition-all"
+                :style="`width: ${zone.percentage}%;`"
+              />
             </div>
-            <div
-              v-if="zoneStats.length === 0"
-              class="py-4 text-center text-gray-500"
-            >
-              ยังไม่มีข้อมูลการดำเนินการ
-            </div>
+            <span class="w-16 text-right text-sm font-medium">{{ zone.count }} รายการ</span>
+          </div>
+          <div
+            v-if="zoneStats.length === 0"
+            class="py-4 text-center text-gray-500"
+          >
+            ยังไม่มีข้อมูลการดำเนินการ
           </div>
         </div>
       </Card>
 
       <!-- Progress by Product -->
       <Card>
-        <div class="p-4">
-          <h3 class="mb-4 text-lg font-bold">
-            การดำเนินการตามสินค้า
-          </h3>
-          <div class="space-y-3">
-            <div
-              v-for="product in productStats"
-              :key="product.id"
-              class="flex items-center gap-4"
-            >
-              <span class="w-32 truncate text-sm font-medium">{{ product.name }}</span>
-              <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  class="h-full rounded-full bg-blue-500 transition-all"
-                  :style="`width: ${product.percentage}%;`"
-                />
-              </div>
-              <span class="w-16 text-right text-sm font-medium">{{ product.count }} รายการ</span>
+        <h3 class="mb-4 text-lg font-bold">
+          การดำเนินการตามสินค้า
+        </h3>
+        <div class="space-y-3">
+          <div
+            v-for="product in productStats"
+            :key="product.id"
+            class="flex items-center gap-4"
+          >
+            <span class="w-32 truncate text-sm font-medium">{{ product.name }}</span>
+            <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
+              <div
+                class="h-full rounded-full bg-blue-500 transition-all"
+                :style="`width: ${product.percentage}%;`"
+              />
             </div>
-            <div
-              v-if="productStats.length === 0"
-              class="py-4 text-center text-gray-500"
-            >
-              ยังไม่มีข้อมูลการดำเนินการ
-            </div>
+            <span class="w-16 text-right text-sm font-medium">{{ product.count }} รายการ</span>
+          </div>
+          <div
+            v-if="productStats.length === 0"
+            class="py-4 text-center text-gray-500"
+          >
+            ยังไม่มีข้อมูลการดำเนินการ
           </div>
         </div>
       </Card>
 
       <!-- Target Achievement by Product -->
       <Card>
-        <div class="p-4">
-          <h3 class="mb-4 text-lg font-bold">
-            การบรรลุเป้าหมายตามสินค้า
-          </h3>
-          <div class="space-y-3">
-            <div
-              v-for="item in productAchievementStats"
-              :key="item.productId"
-              class="flex items-center gap-4"
-            >
-              <span class="w-32 truncate text-sm font-medium">{{ item.productName }}</span>
-              <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  class="h-full rounded-full transition-all"
-                  :class="item.isAchieved ? 'bg-green-500' : 'bg-amber-500'"
-                  :style="`width: ${item.percentage}%;`"
-                />
-              </div>
-              <span class="w-24 text-right text-sm font-medium">
-                {{ item.achieved }} / {{ item.target }}
-              </span>
-              <Badge
-                :color="item.isAchieved ? 'success' : 'warning'"
-                variant="subtle"
-                class="w-20 justify-center"
-              >
-                {{ item.isAchieved ? 'บรรลุ' : 'ยังไม่บรรลุ' }}
-              </Badge>
+        <h3 class="mb-4 text-lg font-bold">
+          การบรรลุเป้าหมายตามสินค้า
+        </h3>
+        <div class="space-y-3">
+          <div
+            v-for="item in productAchievementStats"
+            :key="item.productId"
+            class="flex items-center gap-4"
+          >
+            <span class="w-32 truncate text-sm font-medium">{{ item.productName }}</span>
+            <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-200">
+              <div
+                class="h-full rounded-full transition-all"
+                :class="item.isAchieved ? 'bg-green-500' : 'bg-amber-500'"
+                :style="`width: ${item.percentage}%;`"
+              />
             </div>
-            <div
-              v-if="productAchievementStats.length === 0"
-              class="py-4 text-center text-gray-500"
+            <span class="w-24 text-right text-sm font-medium">
+              {{ item.achieved }} / {{ item.target }}
+            </span>
+            <Badge
+              :color="item.isAchieved ? 'success' : 'warning'"
+              variant="subtle"
+              class="w-20 justify-center"
             >
-              ยังไม่มีเป้าหมายสินค้า
-            </div>
+              {{ item.isAchieved ? 'บรรลุ' : 'ยังไม่บรรลุ' }}
+            </Badge>
+          </div>
+          <div
+            v-if="productAchievementStats.length === 0"
+            class="py-4 text-center text-gray-500"
+          >
+            ยังไม่มีเป้าหมายสินค้า
           </div>
         </div>
       </Card>

@@ -67,7 +67,8 @@
             :items="zoneLoader.fetch.items.map((zone) => ({
               label: `${zone.name} ${project.find.item?.project_progresses?.
                 filter((item: any) => item.zone_id === zone.id)?.length || 0 > 0
-                ? `(${project.find.item?.project_progresses?.filter((item: any) => item.zone_id === zone.id)?.length || 0})`
+                ? `(${project.find.item?.project_progresses?.
+                  filter((item: any) => item.zone_id === zone.id)?.length || 0})`
                 : ''}`,
               value: zone.id,
             }))"

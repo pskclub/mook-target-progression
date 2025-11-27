@@ -39,22 +39,41 @@
             สินค้า / ลูกค้า
           </div>
           <div class="flex">
-            <div
+            <template
               v-for="day in allDays"
               :key="day.key"
-              class="w-20 shrink-0 border-r border-gray-300 p-0.5 text-center text-xs"
-              :class="getDayHeaderClass(day)"
             >
-              <div class="text-[10px] text-gray-400">
-                {{ day.dayOfWeek }}
-              </div>
+              <!-- Gap Indicator -->
               <div
-                class="mx-auto flex h-5 w-5 items-center justify-center text-[11px]"
-                :class="day.isToday ? 'bg-primary rounded-full text-white' : ''"
+                v-if="day.isGap"
+                class="flex w-10 shrink-0 flex-col items-center justify-center border-r border-gray-300 bg-gray-200 p-0.5 text-center"
+                :title="`ข้าม ${day.gapDays} วัน`"
               >
-                {{ day.date }}
+                <Icon
+                  name="ph:dots-three"
+                  class="h-4 w-4 text-gray-400"
+                />
+                <div class="text-[8px] text-gray-500">
+                  {{ day.gapDays }}d
+                </div>
               </div>
-            </div>
+              <!-- Normal Day -->
+              <div
+                v-else
+                class="w-20 shrink-0 border-r border-gray-300 p-0.5 text-center text-xs"
+                :class="getDayHeaderClass(day)"
+              >
+                <div class="text-[10px] text-gray-400">
+                  {{ day.dayOfWeek }}
+                </div>
+                <div
+                  class="mx-auto flex h-5 w-5 items-center justify-center text-[11px]"
+                  :class="day.isToday ? 'bg-primary rounded-full text-white' : ''"
+                >
+                  {{ day.date }}
+                </div>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -80,42 +99,62 @@
             </div>
           </div>
 
-          <!-- Timeline Cells -->
-          <div class="flex">
-            <div
+          <!-- Timeline Cells with Merged Items -->
+          <div
+            class="relative flex"
+            :style="getRowContainerStyle(row.key)"
+          >
+            <!-- Background cells for borders -->
+            <template
               v-for="day in allDays"
               :key="day.key"
-              class="w-20 shrink-0 border-r border-gray-300 p-0.5"
-              :class="getDayCellClass(day)"
             >
+              <!-- Gap cell -->
               <div
-                v-for="item in getItemsForRowAndDate(row.key, day.fullDate)"
-                :key="item.id"
-                class="group relative min-h-7 w-full rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
-                :class="getItemClass(item)"
-                :title="getItemTitle(item)"
-                @click="onItemClick(item)"
-              >
-                <div class="flex items-start justify-between gap-0.5">
-                  <span class="flex-1">
-                    <span
-                      v-if="item.isHistory"
-                      class="mr-0.5"
-                    >⏱</span>
-                    {{ item.description || '✓' }}
-                  </span>
-                  <button
-                    v-if="!item.isHistory && hasHistories(item.parentSchedule)"
-                    color="warning"
-                    :title="`ดูประวัติการเลื่อน (${item.parentSchedule.histories.length} ครั้ง)`"
-                    @click.stop="onHistoryClick(item.parentSchedule)"
-                  >
-                    <Icon
-                      name="ph:clock-counter-clockwise"
-                      class="text-warning h-3 w-3 cursor-pointer"
-                    />
-                  </button>
-                </div>
+                v-if="day.isGap"
+                class="h-full w-10 shrink-0 border-r border-gray-300 bg-gray-100"
+              />
+              <!-- Normal day cell -->
+              <div
+                v-else
+                class="h-full w-20 shrink-0 border-r border-gray-300"
+                :class="getDayCellClass(day)"
+              />
+            </template>
+
+            <!-- Merged Items (positioned absolutely) -->
+            <div
+              v-for="mergedItem in getMergedItemsForRow(row.key)"
+              :key="mergedItem.id"
+              class="group absolute top-0.5 z-[5] min-h-7 rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
+              :class="getMergedItemClass(mergedItem)"
+              :style="getMergedItemStyle(mergedItem)"
+              :title="getMergedItemTitle(mergedItem)"
+              @click="onMergedItemClick(mergedItem)"
+            >
+              <div class="flex items-start justify-between gap-0.5">
+                <span class="flex-1">
+                  <span
+                    v-if="mergedItem.isHistory"
+                    class="mr-0.5"
+                  >⏱</span>
+                  {{ mergedItem.description || '✓' }}
+                  <span
+                    v-if="mergedItem.spanDays > 1"
+                    class="ml-1 text-[9px] opacity-70"
+                  >({{ mergedItem.spanDays }} วัน)</span>
+                </span>
+                <button
+                  v-if="!mergedItem.isHistory && hasMergedItemHistories(mergedItem)"
+                  color="warning"
+                  :title="`ดูประวัติการเลื่อน`"
+                  @click.stop="onMergedHistoryClick(mergedItem)"
+                >
+                  <Icon
+                    name="ph:clock-counter-clockwise"
+                    class="text-warning h-3 w-3 cursor-pointer"
+                  />
+                </button>
               </div>
             </div>
           </div>
@@ -206,6 +245,10 @@ interface TimelineDay {
   isWeekend: boolean
   isFirstOfMonth: boolean
   fullDate: Date
+  isGap?: boolean
+  gapDays?: number
+  gapStartDate?: Date
+  gapEndDate?: Date
 }
 
 interface CalendarItem {
@@ -214,6 +257,17 @@ interface CalendarItem {
   description: string
   isHistory: boolean
   parentSchedule: IProjectSchedule
+}
+
+interface MergedCalendarItem {
+  id: string
+  startDate: Date
+  endDate: Date
+  description: string
+  isHistory: boolean
+  parentSchedules: IProjectSchedule[]
+  spanDays: number
+  stackIndex: number
 }
 
 interface TimelineRow {
@@ -305,7 +359,23 @@ const dateRangeText = computed(() => {
   return `${startText} - ${endText}`
 })
 
-// Generate all days in the range
+// Get all dates that have items
+const datesWithItems = computed<Set<string>>(() => {
+  const dates = new Set<string>()
+
+  allCalendarItems.value.forEach((item) => {
+    const d = new Date(item.date)
+
+    dates.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
+  })
+
+  return dates
+})
+
+// Minimum gap size to collapse (in days)
+const MIN_GAP_TO_COLLAPSE = 3
+
+// Generate all days in the range with gap collapsing
 const allDays = computed<TimelineDay[]>(() => {
   const {
     start, end,
@@ -313,6 +383,7 @@ const allDays = computed<TimelineDay[]>(() => {
 
   const today = new Date()
   const days: TimelineDay[] = []
+  const itemDates = datesWithItems.value
 
   const current = new Date(start)
 
@@ -321,9 +392,55 @@ const allDays = computed<TimelineDay[]>(() => {
     const date = current.getDate()
     const month = current.getMonth()
     const year = current.getFullYear()
+    const dateKey = `${year}-${month}-${date}`
 
+    // Check if this date has items
+    const hasItems = itemDates.has(dateKey)
+
+    // Look ahead to find gap size if no items
+    if (!hasItems) {
+      let gapSize = 0
+      const gapStart = new Date(current)
+      const lookahead = new Date(current)
+
+      while (lookahead <= end) {
+        const laKey = `${lookahead.getFullYear()}-${lookahead.getMonth()}-${lookahead.getDate()}`
+        if (itemDates.has(laKey)) break
+        gapSize++
+        lookahead.setDate(lookahead.getDate() + 1)
+      }
+
+      // If gap is large enough, collapse it
+      if (gapSize >= MIN_GAP_TO_COLLAPSE) {
+        const gapEnd = new Date(current)
+
+        gapEnd.setDate(gapEnd.getDate() + gapSize - 1)
+
+        days.push({
+          key: `gap-${year}-${month}-${date}`,
+          date: 0,
+          month,
+          year,
+          dayOfWeek: '',
+          isToday: false,
+          isWeekend: false,
+          isFirstOfMonth: false,
+          fullDate: new Date(current),
+          isGap: true,
+          gapDays: gapSize,
+          gapStartDate: gapStart,
+          gapEndDate: gapEnd,
+        })
+
+        // Skip ahead past the gap
+        current.setDate(current.getDate() + gapSize)
+        continue
+      }
+    }
+
+    // Normal day
     days.push({
-      key: `${year}-${month}-${date}`,
+      key: dateKey,
       date,
       month,
       year,
@@ -343,7 +460,7 @@ const allDays = computed<TimelineDay[]>(() => {
   return days
 })
 
-// Generate month headers
+// Generate month headers (accounting for gaps)
 const monthHeaders = computed<MonthHeader[]>(() => {
   const headers: MonthHeader[] = []
   let currentMonth = -1
@@ -351,6 +468,18 @@ const monthHeaders = computed<MonthHeader[]>(() => {
   let dayCount = 0
 
   allDays.value.forEach((day, index) => {
+    // Skip gap cells for month grouping, but count their visual width
+    if (day.isGap) {
+      // Gap spans multiple months potentially, just add to current
+      dayCount += 0.5 // Half width for gap indicator
+
+      if (index === allDays.value.length - 1 && headers.length > 0) {
+        headers[headers.length - 1]!.days = dayCount
+      }
+
+      return
+    }
+
     if (day.month !== currentMonth || day.year !== currentYear) {
       if (dayCount > 0 && headers.length > 0) {
         headers[headers.length - 1]!.days = dayCount
@@ -378,7 +507,86 @@ const monthHeaders = computed<MonthHeader[]>(() => {
   return headers
 })
 
-// Group calendar items by product + customer combination
+// Helper to check if two dates are consecutive
+const areDatesConsecutive = (date1: Date, date2: Date): boolean => {
+  const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate())
+  const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate())
+  const diffTime = Math.abs(d2.getTime() - d1.getTime())
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+
+  return diffDays === 1
+}
+
+// Helper to get pixel position for a date (accounting for gaps)
+const getPixelPositionForDate = (date: Date): number => {
+  const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  let position = 0
+
+  for (const day of allDays.value) {
+    const dayDate = new Date(day.fullDate.getFullYear(), day.fullDate.getMonth(), day.fullDate.getDate())
+
+    // If this is a gap, check if target date falls within the gap
+    if (day.isGap && day.gapEndDate) {
+      const gapEnd = new Date(day.gapEndDate.getFullYear(), day.gapEndDate.getMonth(), day.gapEndDate.getDate())
+
+      if (targetDate >= dayDate && targetDate <= gapEnd) {
+        // Date is within a collapsed gap - position at start of gap
+        return position
+      }
+
+      position += 40 // gap width
+    } else {
+      if (dayDate.getTime() === targetDate.getTime()) {
+        return position
+      }
+
+      position += 80 // normal day width
+    }
+  }
+
+  return position
+}
+
+// Helper to check if a date range spans a gap (for calculating visual span)
+const getVisualSpanForDateRange = (startDate: Date, endDate: Date): number => {
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+  let width = 0
+  let started = false
+
+  for (const day of allDays.value) {
+    const dayDate = new Date(day.fullDate.getFullYear(), day.fullDate.getMonth(), day.fullDate.getDate())
+
+    if (day.isGap && day.gapEndDate) {
+      const gapEnd = new Date(day.gapEndDate.getFullYear(), day.gapEndDate.getMonth(), day.gapEndDate.getDate())
+
+      // Check if our range intersects with this gap
+      if (start <= gapEnd && end >= dayDate) {
+        if (!started && start >= dayDate && start <= gapEnd) {
+          started = true
+        }
+
+        if (started) {
+          width += 40 // gap contributes fixed width
+          if (end <= gapEnd) break
+        }
+      }
+    } else {
+      if (dayDate.getTime() === start.getTime()) {
+        started = true
+      }
+
+      if (started) {
+        width += 80
+        if (dayDate.getTime() === end.getTime()) break
+      }
+    }
+  }
+
+  return width
+}
+
+// Group and merge calendar items by zone + customer + product + description with consecutive dates
 const timelineRows = computed<TimelineRow[]>(() => {
   const rowMap = new Map<string, TimelineRow>()
 
@@ -407,22 +615,107 @@ const timelineRows = computed<TimelineRow[]>(() => {
   })
 })
 
-const getItemsForRowAndDate = (
-  rowKey: string,
-  date: Date,
-): CalendarItem[] => {
+// Create merged items for each row
+const getMergedItemsForRow = (rowKey: string): MergedCalendarItem[] => {
   const row = timelineRows.value.find((r) => r.key === rowKey)
   if (!row) return []
 
-  return row.items.filter((item) => {
-    const itemDate = new Date(item.date)
+  // Group items by zone + customer + product + description + isHistory
+  const groupMap = new Map<string, CalendarItem[]>()
 
-    return (
-      itemDate.getDate() === date.getDate()
-      && itemDate.getMonth() === date.getMonth()
-      && itemDate.getFullYear() === date.getFullYear()
-    )
+  row.items.forEach((item) => {
+    const schedule = item.parentSchedule
+    const groupKey = `${schedule.zone_id}-${schedule.customer_id}-${schedule.product_id}-${item.description || ''}-${item.isHistory}`
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, [])
+    }
+
+    groupMap.get(groupKey)!.push(item)
   })
+
+  const mergedItems: MergedCalendarItem[] = []
+
+  groupMap.forEach((items) => {
+    // Sort items by date
+    const sortedItems = [...items].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    // Merge consecutive dates
+    let currentGroup: CalendarItem[] = []
+
+    sortedItems.forEach((item, index) => {
+      if (currentGroup.length === 0) {
+        currentGroup.push(item)
+      } else {
+        const lastItem = currentGroup[currentGroup.length - 1]!
+        const lastDate = new Date(lastItem.date)
+        const currentDate = new Date(item.date)
+
+        if (areDatesConsecutive(lastDate, currentDate)) {
+          currentGroup.push(item)
+        } else {
+          // Finalize current group and start new one
+          const startDate = new Date(currentGroup[0]!.date)
+          const endDate = new Date(currentGroup[currentGroup.length - 1]!.date)
+          const spanDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+          mergedItems.push({
+            id: `merged-${currentGroup[0]!.id}`,
+            startDate,
+            endDate,
+            description: currentGroup[0]!.description,
+            isHistory: currentGroup[0]!.isHistory,
+            parentSchedules: currentGroup.map((i) => i.parentSchedule),
+            spanDays,
+            stackIndex: 0, // Will be calculated later
+          })
+
+          currentGroup = [item]
+        }
+      }
+
+      // Handle last group
+      if (index === sortedItems.length - 1 && currentGroup.length > 0) {
+        const startDate = new Date(currentGroup[0]!.date)
+        const endDate = new Date(currentGroup[currentGroup.length - 1]!.date)
+        const spanDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+        mergedItems.push({
+          id: `merged-${currentGroup[0]!.id}`,
+          startDate,
+          endDate,
+          description: currentGroup[0]!.description,
+          isHistory: currentGroup[0]!.isHistory,
+          parentSchedules: currentGroup.map((i) => i.parentSchedule),
+          spanDays,
+          stackIndex: 0, // Will be calculated later
+        })
+      }
+    })
+  })
+
+  // Sort by startDate then calculate stack indices for overlapping items
+  const sortedMergedItems = mergedItems.sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+
+  // Calculate stack indices for overlapping items
+  sortedMergedItems.forEach((item, index) => {
+    const overlappingItems = sortedMergedItems.slice(0, index).filter((other) => {
+      // Check if items overlap
+      return other.endDate >= item.startDate && other.startDate <= item.endDate
+    })
+
+    // Find the lowest available stack index
+    const usedIndices = overlappingItems.map((o) => o.stackIndex)
+    let stackIndex = 0
+
+    while (usedIndices.includes(stackIndex)) {
+      stackIndex++
+    }
+
+    item.stackIndex = stackIndex
+  })
+
+  return sortedMergedItems
 }
 
 const getDayHeaderClass = (day: TimelineDay) => {
@@ -443,46 +736,82 @@ const hasHistories = (schedule: IProjectSchedule) => {
   return schedule.histories && schedule.histories.length > 0
 }
 
-const getItemClass = (item: CalendarItem) => {
+const hasMergedItemHistories = (item: MergedCalendarItem) => {
+  return item.parentSchedules.some((s) => hasHistories(s))
+}
+
+// Calculate row container height based on max stack index
+const getRowContainerStyle = (rowKey: string) => {
+  const mergedItems = getMergedItemsForRow(rowKey)
+
+  if (mergedItems.length === 0) {
+    return {
+      minHeight: '32px',
+    } // min-h-8 = 2rem = 32px
+  }
+
+  const maxStackIndex = Math.max(...mergedItems.map((i) => i.stackIndex))
+  const itemHeight = 28 // min-h-7 = 1.75rem = 28px
+  const rowHeight = 4 + (maxStackIndex + 1) * (itemHeight + 2) // padding + items
+
+  return {
+    minHeight: `${Math.max(32, rowHeight)}px`,
+  }
+}
+
+// Style for merged items (position and width)
+const getMergedItemStyle = (item: MergedCalendarItem) => {
+  const itemHeight = 28 // min-h-7 = 1.75rem = 28px
+  const left = getPixelPositionForDate(item.startDate) + 2 // +2 for padding
+  const width = getVisualSpanForDateRange(item.startDate, item.endDate) - 4 // -4 for padding on both sides
+  const top = 2 + item.stackIndex * (itemHeight + 2) // 2px initial offset + stacked items
+
+  return {
+    left: `${left}px`,
+    width: `${Math.max(width, 20)}px`, // minimum width for visibility
+    top: `${top}px`,
+  }
+}
+
+const getMergedItemClass = (item: MergedCalendarItem) => {
   if (item.isHistory) {
-    // History items - red, no hover effect (not clickable for edit)
     return 'bg-red-100 text-red-700 border border-red-300 cursor-default'
   }
 
-  // Current schedule with histories - primary with red accent
-  if (hasHistories(item.parentSchedule)) {
+  if (hasMergedItemHistories(item)) {
     return 'bg-warning/20 text-warning-700 hover:bg-warning/30 cursor-pointer ring-2 ring-warning-300'
   }
 
-  // Normal schedule
   return 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
 }
 
-const getItemTitle = (item: CalendarItem) => {
-  const schedule = item.parentSchedule
+const getMergedItemTitle = (item: MergedCalendarItem) => {
+  const schedule = item.parentSchedules[0]!
 
-  if (item.isHistory) {
-    return `[ประวัติเลื่อน] ${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}`
-  }
-
-  const historyText = hasHistories(schedule)
-    ? ` (มีประวัติเลื่อน ${schedule.histories.length} ครั้ง)`
+  const dateRange = item.spanDays > 1
+    ? ` (${item.startDate.toLocaleDateString('th-TH')} - ${item.endDate.toLocaleDateString('th-TH')})`
     : ''
 
-  return `${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}${historyText}`
+  if (item.isHistory) {
+    return `[ประวัติเลื่อน] ${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}${dateRange}`
+  }
+
+  const historyCount = item.parentSchedules.reduce((acc, s) => acc + (s.histories?.length || 0), 0)
+  const historyText = historyCount > 0 ? ` (มีประวัติเลื่อน ${historyCount} ครั้ง)` : ''
+
+  return `${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}${dateRange}${historyText}`
 }
 
-const onItemClick = (item: CalendarItem) => {
+const onMergedItemClick = (item: MergedCalendarItem) => {
   if (item.isHistory) {
-    // History item - open history view modal
-    emits('historyClick', item.parentSchedule)
+    emits('historyClick', item.parentSchedules[0]!)
   } else {
-    // Normal schedule - open edit modal
-    emits('scheduleClick', item.parentSchedule)
+    // Click on first schedule in the group
+    emits('scheduleClick', item.parentSchedules[0]!)
   }
 }
 
-const onHistoryClick = (schedule: IProjectSchedule) => {
-  emits('historyClick', schedule)
+const onMergedHistoryClick = (item: MergedCalendarItem) => {
+  emits('historyClick', item.parentSchedules[0]!)
 }
 </script>

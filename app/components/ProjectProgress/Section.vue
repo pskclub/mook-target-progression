@@ -215,6 +215,11 @@ const tableOptions = useTableSimple<IProjectProgress>({
       type: COLUMN_TYPES.TEXT,
     },
     {
+      accessorKey: 'description',
+      header: 'Description',
+      type: COLUMN_TYPES.TEXT,
+    },
+    {
       accessorKey: 'actions',
       header: '',
       meta: {

@@ -58,6 +58,7 @@ const form = useForm({
       product_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
       customer_id: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
       status: v.optional(v.pipe(v.string(), v.nonEmpty()), 'PENDING'),
+      description: v.optional(v.string(), ''),
     }),
   ),
 })
@@ -98,6 +99,14 @@ const formFields = createFormFields(() => [
       name: 'status',
       required: true,
       options: statusOptions,
+    },
+  },
+  {
+    type: INPUT_TYPES.TEXTAREA,
+    props: {
+      label: 'รายละเอียด',
+      name: 'description',
+      required: false,
     },
   },
 ])

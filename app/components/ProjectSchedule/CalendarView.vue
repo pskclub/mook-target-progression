@@ -85,17 +85,23 @@
         >
           <!-- Row Label -->
           <div class="sticky left-0 z-10 w-52 shrink-0 border-r border-gray-300 bg-white p-2">
+            <div class="flex items-center gap-1">
+              <div class="text-sm">
+                {{ row.zoneName }}
+              </div>
+              <p>•</p>
+              <div
+                class="truncate text-sm"
+                :title="row.customerName"
+              >
+                {{ row.customerName }}
+              </div>
+            </div>
             <div
-              class="truncate text-sm font-medium"
+              class="truncate text-sm font-medium text-gray-500"
               :title="row.productName"
             >
               {{ row.productName }}
-            </div>
-            <div
-              class="truncate text-xs text-gray-500"
-              :title="row.customerName"
-            >
-              {{ row.customerName }}
             </div>
           </div>
 
@@ -126,7 +132,7 @@
             <div
               v-for="mergedItem in getMergedItemsForRow(row.key)"
               :key="mergedItem.id"
-              class="group absolute top-0.5 z-[5] min-h-7 rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
+              class="group absolute top-0.5 z-[5] min-h-7 rounded px-1 py-0.5 text-xs leading-tight font-medium break-words whitespace-pre-line"
               :class="getMergedItemClass(mergedItem)"
               :style="getMergedItemStyle(mergedItem)"
               :title="getMergedItemTitle(mergedItem)"
@@ -253,7 +259,8 @@ interface TimelineDay {
 
 interface CalendarItem {
   id: string
-  date: string
+  startDate: string
+  endDate: string
   description: string
   isHistory: boolean
   parentSchedule: IProjectSchedule
@@ -274,6 +281,7 @@ interface TimelineRow {
   key: string
   productName: string
   customerName: string
+  zoneName: string
   items: CalendarItem[]
 }
 
@@ -291,7 +299,8 @@ const allCalendarItems = computed<CalendarItem[]>(() => {
     // Add main schedule
     items.push({
       id: `schedule-${schedule.id}`,
-      date: schedule.date,
+      startDate: schedule.start_date,
+      endDate: schedule.end_date,
       description: schedule.description,
       isHistory: false,
       parentSchedule: schedule,
@@ -302,7 +311,8 @@ const allCalendarItems = computed<CalendarItem[]>(() => {
       schedule.histories.forEach((history, index) => {
         items.push({
           id: `history-${schedule.id}-${index}`,
-          date: history.date,
+          startDate: history.start_date,
+          endDate: history.end_date,
           description: history.description,
           isHistory: true,
           parentSchedule: schedule,
@@ -325,7 +335,11 @@ const dateRange = computed(() => {
     }
   }
 
-  const dates = allCalendarItems.value.map((item) => new Date(item.date).getTime())
+  const dates = allCalendarItems.value.flatMap((item) => [
+    new Date(item.startDate).getTime(),
+    new Date(item.endDate).getTime(),
+  ])
+
   const minDate = new Date(Math.min(...dates))
   const maxDate = new Date(Math.max(...dates))
 
@@ -364,9 +378,13 @@ const datesWithItems = computed<Set<string>>(() => {
   const dates = new Set<string>()
 
   allCalendarItems.value.forEach((item) => {
-    const d = new Date(item.date)
+    const startDate = new Date(item.startDate)
+    const endDate = new Date(item.endDate)
 
-    dates.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
+    // Add all dates in the range
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      dates.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
+    }
   })
 
   return dates
@@ -507,16 +525,6 @@ const monthHeaders = computed<MonthHeader[]>(() => {
   return headers
 })
 
-// Helper to check if two dates are consecutive
-const areDatesConsecutive = (date1: Date, date2: Date): boolean => {
-  const d1 = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate())
-  const d2 = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate())
-  const diffTime = Math.abs(d2.getTime() - d1.getTime())
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
-
-  return diffDays === 1
-}
-
 // Helper to get pixel position for a date (accounting for gaps)
 const getPixelPositionForDate = (date: Date): number => {
   const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -599,6 +607,7 @@ const timelineRows = computed<TimelineRow[]>(() => {
         key,
         productName: schedule.products?.name || '-',
         customerName: schedule.customers?.name || '-',
+        zoneName: schedule.zones?.name || '-',
         items: [],
       })
     }
@@ -606,12 +615,15 @@ const timelineRows = computed<TimelineRow[]>(() => {
     rowMap.get(key)!.items.push(item)
   })
 
-  // Sort by product name, then customer name
+  // Sort by zone name, then customer name, then product name
   return Array.from(rowMap.values()).sort((a, b) => {
-    const productCompare = a.productName.localeCompare(b.productName, 'th')
-    if (productCompare !== 0) return productCompare
+    const zoneCompare = a.zoneName.localeCompare(b.zoneName, 'th')
+    if (zoneCompare !== 0) return zoneCompare
 
-    return a.customerName.localeCompare(b.customerName, 'th')
+    const customerCompare = a.customerName.localeCompare(b.customerName, 'th')
+    if (customerCompare !== 0) return customerCompare
+
+    return a.productName.localeCompare(b.productName, 'th')
   })
 })
 
@@ -637,60 +649,23 @@ const getMergedItemsForRow = (rowKey: string): MergedCalendarItem[] => {
   const mergedItems: MergedCalendarItem[] = []
 
   groupMap.forEach((items) => {
-    // Sort items by date
-    const sortedItems = [...items].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    // Since we now have start_date and end_date, we don't need to merge consecutive dates
+    // Just convert each item to a MergedCalendarItem
+    items.forEach((item) => {
+      const startDate = new Date(item.startDate)
+      const endDate = new Date(item.endDate)
+      const spanDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
-    // Merge consecutive dates
-    let currentGroup: CalendarItem[] = []
-
-    sortedItems.forEach((item, index) => {
-      if (currentGroup.length === 0) {
-        currentGroup.push(item)
-      } else {
-        const lastItem = currentGroup[currentGroup.length - 1]!
-        const lastDate = new Date(lastItem.date)
-        const currentDate = new Date(item.date)
-
-        if (areDatesConsecutive(lastDate, currentDate)) {
-          currentGroup.push(item)
-        } else {
-          // Finalize current group and start new one
-          const startDate = new Date(currentGroup[0]!.date)
-          const endDate = new Date(currentGroup[currentGroup.length - 1]!.date)
-          const spanDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-
-          mergedItems.push({
-            id: `merged-${currentGroup[0]!.id}`,
-            startDate,
-            endDate,
-            description: currentGroup[0]!.description,
-            isHistory: currentGroup[0]!.isHistory,
-            parentSchedules: currentGroup.map((i) => i.parentSchedule),
-            spanDays,
-            stackIndex: 0, // Will be calculated later
-          })
-
-          currentGroup = [item]
-        }
-      }
-
-      // Handle last group
-      if (index === sortedItems.length - 1 && currentGroup.length > 0) {
-        const startDate = new Date(currentGroup[0]!.date)
-        const endDate = new Date(currentGroup[currentGroup.length - 1]!.date)
-        const spanDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-
-        mergedItems.push({
-          id: `merged-${currentGroup[0]!.id}`,
-          startDate,
-          endDate,
-          description: currentGroup[0]!.description,
-          isHistory: currentGroup[0]!.isHistory,
-          parentSchedules: currentGroup.map((i) => i.parentSchedule),
-          spanDays,
-          stackIndex: 0, // Will be calculated later
-        })
-      }
+      mergedItems.push({
+        id: `merged-${item.id}`,
+        startDate,
+        endDate,
+        description: item.description,
+        isHistory: item.isHistory,
+        parentSchedules: [item.parentSchedule],
+        spanDays,
+        stackIndex: 0, // Will be calculated later
+      })
     })
   })
 
@@ -779,10 +754,10 @@ const getMergedItemClass = (item: MergedCalendarItem) => {
   }
 
   if (hasMergedItemHistories(item)) {
-    return 'bg-warning/20 text-warning-700 hover:bg-warning/30 cursor-pointer ring-2 ring-warning-300'
+    return 'bg-warning-200 text-warning-700 hover:bg-warning/30 cursor-pointer border border-warning-300'
   }
 
-  return 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
+  return 'bg-primary-200 text-primary hover:bg-primary-300 cursor-pointer'
 }
 
 const getMergedItemTitle = (item: MergedCalendarItem) => {

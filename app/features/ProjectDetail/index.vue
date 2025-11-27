@@ -142,6 +142,7 @@
                 filter((item: any) => item.zone_id === selectedZoneId)?.length || 0 }})</span>
             </p>
             <ProjectScheduleSection
+              disable-add
               :project-id="projectId"
               :zone-id="selectedZoneId"
               @refresh="onRefresh"

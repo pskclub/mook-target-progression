@@ -25,7 +25,7 @@
       </Button>
     </div>
     <Button
-      v-if="zoneId"
+      v-if="zoneId && !props.disableAdd"
       trailing-icon="ph:plus"
       size="sm"
       @click="onAdd"
@@ -91,6 +91,7 @@ const emits = defineEmits(['refresh'])
 const props = defineProps<{
   projectId: string
   zoneId?: string
+  disableAdd?: boolean
 }>()
 
 const loader = useProjectScheduleLoader(props.projectId)
@@ -102,7 +103,8 @@ const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const historyModal = overlay.create(FormModal)
 const columnVisibility = ref({
-  date: true,
+  start_date: true,
+  end_date: true,
   zone: !props.zoneId,
   products_name: true,
   customers_name: true,
@@ -355,8 +357,13 @@ const tableOptions = useTableSimple({
   items: () => scheduleItems.value,
   columns: () => [
     {
-      accessorKey: 'date',
-      header: 'วันที่',
+      accessorKey: 'start_date',
+      header: 'วันที่เริ่มต้น',
+      type: COLUMN_TYPES.DATE,
+    },
+    {
+      accessorKey: 'end_date',
+      header: 'วันที่สิ้นสุด',
       type: COLUMN_TYPES.DATE,
     },
     {

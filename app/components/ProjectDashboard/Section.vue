@@ -141,12 +141,17 @@
                 </p>
               </div>
             </div>
-            <Badge
-              :color="schedule.daysLeft === 0 ? 'error' : schedule.daysLeft <= 2 ? 'warning' : 'info'"
-              variant="subtle"
-            >
-              {{ schedule.daysLeft === 0 ? 'วันนี้' : `อีก ${schedule.daysLeft} วัน` }}
-            </Badge>
+            <div class="flex flex-col items-end justify-end">
+              <Badge
+                :color="schedule.daysLeft === 0 ? 'error' : schedule.daysLeft <= 2 ? 'warning' : 'info'"
+                variant="subtle"
+              >
+                {{ schedule.daysLeft === 0 ? 'วันนี้' : `อีก ${schedule.daysLeft} วัน` }}
+              </Badge>
+              <p class="mt-2">
+                {{ TimeHelper.displayDate(schedule.start_date) }} - {{ TimeHelper.displayDate(schedule.end_date) }}
+              </p>
+            </div>
           </card>
         </div>
         <div
@@ -252,7 +257,8 @@
                 นัดปัจจุบัน
               </p>
               <p class="text-sm font-medium">
-                {{ formatDate(item.schedule.date) }}
+                {{ TimeHelper.displayDate(item.schedule.start_date) }}
+                - {{ TimeHelper.displayDate(item.schedule.end_date) }}
               </p>
             </div>
           </Card>
@@ -305,12 +311,12 @@
                   {{ item.schedule.products?.name }}
                 </p>
                 <div class="mt-1 flex items-center gap-1 text-xs">
-                  <span class="text-red-500 line-through">{{ formatDate(item.fromDate) }}</span>
+                  <span class="text-red-500 line-through">{{ TimeHelper.displayDate(item.fromStartDate) }} - {{ TimeHelper.displayDate(item.fromEndDate) }}</span>
                   <Icon
                     name="ph:arrow-right"
                     class="size-3 text-gray-400"
                   />
-                  <span class="font-medium text-green-600">{{ formatDate(item.toDate) }}</span>
+                  <span class="font-medium text-green-600">{{ TimeHelper.displayDate(item.toStartDate) }} - {{ TimeHelper.displayDate(item.toEndDate) }}</span>
                 </div>
                 <p
                   v-if="item.description"
@@ -505,13 +511,54 @@
 <script lang="ts" setup>
 import { PROJECT_PROGRESS_STATUS, PROJECT_PROGRESS_STATUS_LABEL, getStatusColor } from '~/constants/config'
 
+const props = defineProps<{
+  dateRange?: {
+    start: string
+    end: string
+  }
+}>()
+
 const project = useProjectsPageLoader()
 const zoneLoader = useZonePageLoader()
+
+// Filter progresses by date range
+const filteredProgresses = computed(() => {
+  const progresses = project.find.item?.project_progresses || []
+
+  return progresses
+})
+
+// Filter schedules by date range
+const filteredSchedules = computed(() => {
+  const schedules = project.find.item?.project_schedules || []
+
+  if (!props.dateRange) {
+    return schedules
+  }
+
+  const filterStart = new Date(props.dateRange.start)
+  const filterEnd = new Date(props.dateRange.end)
+
+  filterStart.setHours(0, 0, 0, 0)
+  filterEnd.setHours(23, 59, 59, 999)
+
+  return schedules.filter((s) => {
+    // Check if schedule's date range overlaps with filter range
+    const scheduleStart = new Date(s.start_date)
+    const scheduleEnd = new Date(s.end_date)
+
+    scheduleStart.setHours(0, 0, 0, 0)
+    scheduleEnd.setHours(23, 59, 59, 999)
+
+    // Check for overlap: schedule overlaps if it starts before filter ends AND ends after filter starts
+    return scheduleStart <= filterEnd && scheduleEnd >= filterStart
+  })
+})
 
 // Overall progress summary
 const overallProgress = computed(() => {
   const targets = project.find.item?.project_targets || []
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
   const zones = zoneLoader.fetch.items
 
   let totalTarget = 0
@@ -540,7 +587,7 @@ const overallProgress = computed(() => {
 
 // Upcoming schedules (next 7 days)
 const upcomingSchedules = computed(() => {
-  const schedules = project.find.item?.project_schedules || []
+  const schedules = filteredSchedules.value
   const today = new Date()
 
   today.setHours(0, 0, 0, 0)
@@ -552,14 +599,14 @@ const upcomingSchedules = computed(() => {
 
   return schedules
     .filter((s) => {
-      const scheduleDate = new Date(s.date)
+      const scheduleDate = new Date(s.start_date)
 
       scheduleDate.setHours(0, 0, 0, 0)
 
       return scheduleDate >= today && scheduleDate <= next7Days
     })
     .map((s) => {
-      const scheduleDate = new Date(s.date)
+      const scheduleDate = new Date(s.start_date)
       const daysLeft = Math.ceil((scheduleDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
       return {
@@ -576,7 +623,7 @@ const upcomingSchedules = computed(() => {
 // Zones that need attention (below 50% achievement)
 const zonesNeedAttention = computed(() => {
   const targets = project.find.item?.project_targets || []
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
   const zones = zoneLoader.fetch.items
 
   const targetPerZone = targets.reduce((sum, t) => sum + (t.amount || 0), 0)
@@ -608,19 +655,20 @@ const zonesNeedAttention = computed(() => {
 })
 
 const stats = computed(() => {
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
+  const schedules = filteredSchedules.value
   const uniqueCustomers = new Set(progresses.map((p) => p.customer_id))
 
   return {
     totalProducts: project.find.item?.project_targets?.length || 0,
     totalProgress: progresses.length,
-    totalSchedules: project.find.item?.project_schedules?.length || 0,
+    totalSchedules: schedules.length,
     totalCustomers: uniqueCustomers.size,
   }
 })
 
 const statusStats = computed(() => {
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
 
   return Object.values(PROJECT_PROGRESS_STATUS).map((status) => ({
     key: status,
@@ -631,7 +679,7 @@ const statusStats = computed(() => {
 })
 
 const zoneStats = computed(() => {
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
   const zones = zoneLoader.fetch.items
   const maxCount = Math.max(...zones.map((z) => progresses.filter((p) => p.zone_id === z.id).length), 1)
 
@@ -649,7 +697,7 @@ const zoneStats = computed(() => {
 })
 
 const productStats = computed(() => {
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
   const productMap = new Map<string, { id: string
     name: string
     count: number }>()
@@ -682,7 +730,7 @@ const productStats = computed(() => {
 // Achievement stats by product (non-rejected progress counts as achieved)
 const productAchievementStats = computed(() => {
   const targets = project.find.item?.project_targets || []
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
 
   return targets.map((target) => {
     const achievedCount = progresses.filter(
@@ -710,7 +758,7 @@ const productAchievementStats = computed(() => {
 // แสดงการบรรลุเป้าหมายแยกตามเขตและสินค้า
 const zoneProductAchievementStats = computed(() => {
   const targets = project.find.item?.project_targets || []
-  const progresses = project.find.item?.project_progresses || []
+  const progresses = filteredProgresses.value
   const zones = zoneLoader.fetch.items
 
   return zones.map((zone) => {
@@ -752,7 +800,7 @@ const zoneProductAchievementStats = computed(() => {
 
 // Postpone statistics
 const postponeStats = computed(() => {
-  const schedules = project.find.item?.project_schedules || []
+  const schedules = filteredSchedules.value
 
   let totalPostpones = 0
   let schedulesWithPostpone = 0
@@ -774,7 +822,7 @@ const postponeStats = computed(() => {
 
 // Most postponed schedules (top 5)
 const mostPostponedSchedules = computed(() => {
-  const schedules = project.find.item?.project_schedules || []
+  const schedules = filteredSchedules.value
 
   return schedules
     .filter((s) => s.histories && s.histories.length > 0)
@@ -788,12 +836,14 @@ const mostPostponedSchedules = computed(() => {
 
 // Recent postpone history (latest 5)
 const recentPostponeHistory = computed(() => {
-  const schedules = project.find.item?.project_schedules || []
+  const schedules = filteredSchedules.value
   const allHistory: Array<{
     id: string
     schedule: typeof schedules[0]
-    fromDate: string
-    toDate: string
+    fromStartDate: string
+    fromEndDate: string
+    toStartDate: string
+    toEndDate: string
     description: string
   }> = []
 
@@ -802,16 +852,40 @@ const recentPostponeHistory = computed(() => {
       const histories = schedule.histories!
 
       histories.forEach((history, index) => {
-        // Calculate the "to date" - either next history date or current schedule date
-        const toDate = index < histories.length - 1
-          ? histories[index + 1]!.date
-          : schedule.date
+        // Calculate the "to date" - either next history date or current schedule start_date
+        const toStartDate = index < histories.length - 1
+          ? histories[index + 1]!.start_date
+          : schedule.start_date
+
+        const toEndDate = index < histories.length - 1
+          ? histories[index + 1]!.end_date
+          : schedule.end_date
+
+        // Filter by date range if provided
+        if (props.dateRange) {
+          const filterStart = new Date(props.dateRange.start)
+          const filterEnd = new Date(props.dateRange.end)
+          const historyStart = new Date(history.start_date)
+          const historyEnd = new Date(history.end_date)
+
+          filterStart.setHours(0, 0, 0, 0)
+          filterEnd.setHours(23, 59, 59, 999)
+          historyStart.setHours(0, 0, 0, 0)
+          historyEnd.setHours(23, 59, 59, 999)
+
+          // Skip if history doesn't overlap with filter range
+          if (historyStart > filterEnd || historyEnd < filterStart) {
+            return
+          }
+        }
 
         allHistory.push({
           id: `${schedule.id}-${index}`,
           schedule,
-          fromDate: history.date,
-          toDate,
+          fromStartDate: history.start_date,
+          fromEndDate: history.end_date,
+          toStartDate: toStartDate,
+          toEndDate: toEndDate,
           description: history.description || '',
         })
       })
@@ -820,16 +894,7 @@ const recentPostponeHistory = computed(() => {
 
   // Sort by fromDate descending (most recent first)
   return allHistory
-    .sort((a, b) => new Date(b.fromDate).getTime() - new Date(a.fromDate).getTime())
+    .sort((a, b) => new Date(b.fromStartDate).getTime() - new Date(a.fromStartDate).getTime())
     .slice(0, 5)
 })
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr)
-
-  return date.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-  })
-}
 </script>

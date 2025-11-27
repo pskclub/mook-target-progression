@@ -53,20 +53,23 @@
           <Button
             size="xs"
             variant="ghost"
-            leading-icon="ph:calendar"
-            @click="onViewSchedule(row.original)"
+            leading-icon="ph:plus"
+            @click="onAddSchedule(row.original)"
           >
-            กำหนดการ <Badge
-              v-if="project.find.item?.project_schedules?.
-                filter((item: any) => item.progress_id === row.original.id)?.length || 0 > 0"
-              variant="subtle"
-              color="warning"
-            >
-              {{
-                project.find.item?.project_schedules?.
-                  filter((item: any) => item.progress_id === row.original.id)?.length || 0
-              }}
-            </Badge>
+            เพิ่มกำหนดการ
+            <template #trailing>
+              <Badge
+                v-if="project.find.item?.project_schedules?.
+                  filter((item: any) => item.progress_id === row.original.id)?.length || 0 > 0"
+                variant="subtle"
+                color="warning"
+              >
+                {{
+                  project.find.item?.project_schedules?.
+                    filter((item: any) => item.progress_id === row.original.id)?.length || 0
+                }}
+              </Badge>
+            </template>
           </Button>
         </div>
       </template>
@@ -76,8 +79,8 @@
 
 <script lang="ts" setup>
 import FormModal from '~/components/ProjectProgress/FormModal.vue'
-import ScheduleViewModal from '~/components/ProjectProgress/ScheduleViewModal.vue'
-import type { IProjectProgress } from '~/loaders/project-detail'
+import ScheduleFormModal from '~/components/ProjectSchedule/FormModal.vue'
+import type { IProjectProgress, IProjectSchedule } from '~/loaders/project-detail'
 import { getStatusColor } from '~/constants/config'
 
 const emits = defineEmits<{
@@ -92,12 +95,13 @@ const props = defineProps<{
 
 const loader = useProjectProgressLoader(props.projectId)
 const project = useProjectsPageLoader()
+const scheduleLoader = useProjectScheduleLoader(props.projectId)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
-const scheduleModal = overlay.create(ScheduleViewModal)
+const addScheduleModal = overlay.create(ScheduleFormModal)
 const form = useForm({
   validationSchema: toTypedSchema(
     v.object({
@@ -236,13 +240,21 @@ const tableOptions = useTableSimple<IProjectProgress>({
   ],
 })
 
-const onViewSchedule = (values: IProjectProgress) => {
-  scheduleModal.open({
-    progress: values,
+const onAddSchedule = (row: IProjectProgress) => {
+  addScheduleModal.open({
+    productId: row.product_id,
+    customerId: row.customer_id,
     projectId: props.projectId,
-    zoneId: props.zoneId!,
-    onRefresh: () => {
-      emits('refresh')
+    status: () => scheduleLoader.add.status,
+    onSubmit: (payload: IProjectSchedule) => {
+      scheduleLoader.addRun({
+        data: {
+          ...payload,
+          zone_id: row.zone_id,
+          project_id: props.projectId,
+          progress_id: row.id,
+        },
+      })
     },
   })
 }
@@ -398,6 +410,33 @@ useWatchTrue(
       description: StringHelper.getError(
         loader.add.status.errorData,
         'เกิดข้อผิดพลาดในการเพิ่มการดำเนินการ กรุณาลองใหม่อีกครั้ง',
+      ),
+    })
+  },
+)
+
+useWatchTrue(
+  () => scheduleLoader.add.status.isSuccess,
+  () => {
+    addScheduleModal.close()
+    emits('refresh')
+    noti.success({
+      title: 'เพิ่มกำหนดการสำเร็จ',
+      description: 'คุณได้เพิ่มกำหนดการเรียบร้อยแล้ว',
+    })
+  },
+)
+
+useWatchTrue(
+  () => scheduleLoader.add.status.isError,
+  () => {
+    addScheduleModal.close()
+    dialog.close()
+    noti.error({
+      title: 'เพิ่มกำหนดการไม่สำเร็จ',
+      description: StringHelper.getError(
+        scheduleLoader.add.status.errorData,
+        'เกิดข้อผิดพลาดในการเพิ่มกำหนดการ กรุณาลองใหม่อีกครั้ง',
       ),
     })
   },

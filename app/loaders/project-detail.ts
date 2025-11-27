@@ -28,9 +28,11 @@ export interface IProjectSchedule {
   project_id: string
   progress_id?: number
   description: string
-  date: string
+  start_date: string
+  end_date: string
   histories: {
-    date: string
+    start_date: string
+    end_date: string
     description: string
   }[]
   created_at: string
@@ -77,7 +79,7 @@ export const useProjectScheduleLoader = (_projectId: string) => {
       return {
         params: {
           select: '*, products(*), zones(*), customers(*)',
-          order: 'date.asc',
+          order: 'start_date.asc',
         },
         adapter: createSupabaseAdapter(['products.name', 'zones.name', 'customers.name']),
       }

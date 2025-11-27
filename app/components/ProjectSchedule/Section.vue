@@ -31,10 +31,8 @@
   <Card>
     <!-- Table View -->
     <div v-if="viewMode === 'table'">
-      <Table
+      <TableSimple
         :options="tableOptions"
-        @pageChange="loader.fetchPageChange"
-        @search="loader.fetchSearch"
       >
         <template #actions-cell="{ row }">
           <div class="flex justify-end">
@@ -50,13 +48,13 @@
             />
           </div>
         </template>
-      </Table>
+      </TableSimple>
     </div>
 
     <!-- Calendar View -->
     <div v-else>
       <CalendarView
-        :schedules="loader.fetch.items"
+        :schedules="scheduleItems"
         @scheduleClick="onEdit"
       />
     </div>
@@ -69,12 +67,14 @@ import CalendarModal from '~/components/ProjectSchedule/CalendarModal.vue'
 import CalendarView from '~/components/ProjectSchedule/CalendarView.vue'
 import type { IProjectSchedule } from '~/loaders/project-detail'
 
+const emits = defineEmits(['refresh'])
 const props = defineProps<{
   projectId: string
   zoneId?: string
 }>()
 
 const loader = useProjectScheduleLoader(props.projectId)
+const project = useProjectsPageLoader()
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
@@ -82,12 +82,6 @@ const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const calendarModal = overlay.create(CalendarModal)
 const viewMode = ref<'table' | 'calendar'>('calendar')
-
-const showCalendar = () => {
-  calendarModal.open({
-    schedules: loader.fetch.items,
-  })
-}
 
 const onEdit = (values: IProjectSchedule) => {
   editModal.open({
@@ -140,37 +134,11 @@ const onDelete = (values: IProjectSchedule) => {
     })
 }
 
-// Load data
-loader.fetchSetLoading()
-onMounted(() => {
-  fetch()
-})
-
-const fetch = (page = 1) => {
-  const params: any = {
-    project_id: props.projectId,
-  }
-
-  if (props.zoneId) {
-    params.zone_id = props.zoneId
-  }
-
-  loader.fetchPage(page, '', {
-    params,
-  })
-}
-
-// Watch for zone changes
-watch(() => props.zoneId, () => {
-  fetch()
-})
-
-// Watch for success/error states
 useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    fetch()
+    emits('refresh')
     noti.success({
       title: 'แก้ไขกำหนดการสำเร็จ',
       description: 'คุณได้แก้ไขกำหนดการเรียบร้อยแล้ว',
@@ -196,7 +164,7 @@ useWatchTrue(
 useWatchTrue(
   () => loader.delete.status.isSuccess,
   () => {
-    fetch()
+    emits('refresh')
     dialog.close()
     noti.success({
       title: 'ลบกำหนดการสำเร็จ',
@@ -223,7 +191,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    loader.fetchPage()
+    emits('refresh')
     noti.success({
       title: 'เพิ่มกำหนดการสำเร็จ',
       description: 'คุณได้เพิ่มกำหนดการเรียบร้อยแล้ว',
@@ -246,11 +214,19 @@ useWatchTrue(
   },
 )
 
-const tableOptions = useTable({
-  repo: loader,
-  options: {
-    isHidePagination: true,
-  },
+const scheduleItems = computed(() => {
+  return (ArrayHelper.toArray(project.find.item?.project_schedules) as IProjectSchedule[])
+    .filter((item) => {
+      if (props.zoneId && item.zone_id !== props.zoneId) {
+        return false
+      }
+
+      return true
+    })
+})
+
+const tableOptions = useTableSimple({
+  items: () => scheduleItems.value,
   columns: () => [
     {
       accessorKey: 'date',

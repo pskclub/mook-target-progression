@@ -42,8 +42,8 @@ const props = defineProps<{
   isEditing?: boolean
   values?: any
   projectId: string
-  productId: string
-  customerId: string
+  productId?: string
+  customerId?: string
 
   status: () => IStatus
   onSubmit: (values: any) => void

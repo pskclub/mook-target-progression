@@ -12,23 +12,15 @@
         เพิ่มสินค้า
       </Button>
     </div>
-
-    <div class="max-w-full overflow-x-scroll px-1 py-2">
-      <FlexDeck
-        :options="tableOptions"
-        container-class="flex gap-4"
-        @pageChange="loader.fetchPageChange"
-        @search="loader.fetchSearch"
-      >
-        <template #default="{ row }: { row: IProjectTarget }">
-          <TargetItem
-            :row="row"
-            :project-progresses="props.projectProgresses"
-            :zones="zoneLoader.fetch.items"
-            @fetch="fetch"
-          />
-        </template>
-      </FlexDeck>
+    <div class="flex max-w-full gap-4 overflow-x-scroll px-1 py-2">
+      <TargetItem
+        v-for="value in project.find.item?.project_targets"
+        :key="value.id"
+        :row="value"
+        :project-progresses="props.projectProgresses"
+        :zones="zoneLoader.fetch.items"
+        @fetch="fetch"
+      />
     </div>
   </div>
 </template>
@@ -44,19 +36,13 @@ const props = defineProps<{
 }>()
 
 const loader = useProjectTargetLoader(props.projectId)
+const project = useProjectsPageLoader()
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
 const zoneLoader = useZonePageLoader()
 
 const addModal = overlay.create(FormModal)
-
-const tableOptions = useFlexDeck({
-  repo: loader,
-  options: {
-    isHidePagination: true,
-  },
-})
 
 const onAdd = () => {
   addModal.open({
@@ -72,18 +58,10 @@ const onAdd = () => {
   })
 }
 
-// Load data
-loader.fetchSetLoading()
-zoneLoader.fetchSetLoading()
-onMounted(() => {
-  zoneLoader.fetchPage()
-  fetch()
-})
-
-const fetch = (page = 1) => {
-  loader.fetchPage(page, '', {
+const fetch = () => {
+  project.findRun(props.projectId, {
     params: {
-      project_id: props.projectId,
+      id: props.projectId,
     },
   })
 }

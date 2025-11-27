@@ -6,9 +6,10 @@ export interface IProject {
   created_at: string
   project_targets?: IProjectTarget[]
   project_progresses?: IProjectProgress[]
+  project_schedules?: IProjectSchedule[]
 }
 
-export const useProjectsPageLoader = () => {
+export const useProjectsPageLoader = defineStore('projects', () => {
   return usePageLoader<IProject>({
     baseURL: '/projects',
     getBaseRequestOptions: () => {
@@ -21,5 +22,14 @@ export const useProjectsPageLoader = () => {
         adapter: createSupabaseAdapter(['name']),
       }
     },
+    find: {
+      getRequestOptions: () => {
+        return {
+          params: {
+            select: '*, project_targets(*, products(*)), project_progresses(*, products(*), zones(*), customers(*)), project_schedules(*, products(*), zones(*), customers(*))',
+          },
+        }
+      },
+    }
   })
-}
+})

@@ -5,13 +5,21 @@
       progress: false,
     }"
   >
-    <div class="flex">
+    <DashboardGroup>
       <DashboardSidebar
-        class="w-[300px] bg-white"
-        :ui="{ footer: 'border-t border-default' }"
+        v-model:collapsed="collapsed"
+        collapsible
+        class="bg-white"
+        :ui="{
+          footer: 'border-t border-default',
+          root: collapsed ? '' : 'w-[250px]',
+        }"
       >
-        <template #header>
-          <p class="text-xl font-bold">
+        <template #header="{ collapsed }">
+          <p
+            v-if="!collapsed"
+            class="text-xl font-bold"
+          >
             Mook Progression
           </p>
         </template>
@@ -31,15 +39,32 @@
           />
         </template>
       </DashboardSidebar>
-      <div class="w-full overflow-x-scroll bg-gray-50">
-        <main
-          :class="[
-            'mx-auto min-h-full w-full flex-1 px-6 py-10 lg:px-8',
-          ]"
-        >
+      <DashboardPanel
+        :ui="{
+          body: 'p-0 sm:p-0',
+        }"
+      >
+        <template #header>
+          <DashboardNavbar
+            :ui="{
+              title: 'text-lg',
+            }"
+            :title="app.pageMeta.title"
+          >
+            <template #leading>
+              <DashboardSidebarCollapse />
+            </template>
+
+            <template #right>
+              <div id="header-right" />
+            </template>
+          </DashboardNavbar>
+        </template>
+        <template #body>
           <Breadcrumb
             v-if="
-              !app.pageMeta.isHideBreadcrumbs && app.pageMeta.breadcrumbs?.length > 1
+              !app.pageMeta.isHideBreadcrumbs && ArrayHelper.toArray(app.pageMeta.breadcrumbs).length > 0
+                && app.pageMeta.breadcrumbs!.length > 1
             "
             :items="app.pageMeta.breadcrumbs"
             class="mb-5"
@@ -48,33 +73,10 @@
               list: 'w-full',
             }"
           />
-          <div
-            v-if="app.pageMeta.title"
-            class="mb-4 flex flex-col justify-between gap-1 md:mb-6 md:gap-4 lg:flex-row lg:items-start"
-          >
-            <div class="flex flex-1 flex-col">
-              <h1
-                class="text-3xl font-bold wrap-break-word lg:max-w-2/3"
-                :title="app.pageMeta.title"
-              >
-                {{ app.pageMeta.title }}
-                <span id="page-title-extra" />
-              </h1>
-
-              <div id="page-subtitle" />
-              <p
-                v-if="app.pageMeta.sub_title"
-                class="text-[#475467]"
-              >
-                {{ app.pageMeta.sub_title }}
-              </p>
-            </div>
-            <div id="page-header" />
-          </div>
           <NuxtPage />
-        </main>
-      </div>
-    </div>
+        </template>
+      </DashboardPanel>
+    </DashboardGroup>
   </App>
 </template>
 
@@ -82,34 +84,30 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const app = useApp()
-
-const items: NavigationMenuItem[][] = [[{
-  label: 'Dashboard',
-  icon: 'i-lucide-house',
-  to: '/',
-},
-{
-  label: 'Projects',
-  icon: 'i-lucide-inbox',
-  to: '/projects',
-},
-{
-  label: 'Settings',
-  icon: 'i-lucide-settings',
-  defaultOpen: true,
-  children: [
-    {
-      label: 'Zones',
-      to: '/zones',
-    },
-    {
-      label: 'Products',
-      to: '/products',
-    },
-    {
-      label: 'Customers',
-      to: '/customers',
-    },
-  ],
-}]]
+const collapsed = ref(false)
+const items: NavigationMenuItem[][] = [[
+  {
+    label: 'Projects',
+    icon: 'i-lucide-inbox',
+    to: '/projects',
+  },
+  {
+    label: 'Settings',
+    icon: 'i-lucide-settings',
+    defaultOpen: true,
+    children: [
+      {
+        label: 'Zones',
+        to: '/zones',
+      },
+      {
+        label: 'Products',
+        to: '/products',
+      },
+      {
+        label: 'Customers',
+        to: '/customers',
+      },
+    ],
+  }]]
 </script>

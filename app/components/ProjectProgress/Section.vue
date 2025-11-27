@@ -17,11 +17,9 @@
       :options="formFields"
       class="flex gap-4"
     />
-    <Table
+    <TableSimple
       v-model:column-visibility="columnVisibility"
       :options="tableOptions"
-      @pageChange="loader.fetchPageChange"
-      @search="loader.fetchSearch"
     >
       <template #status-cell="{ row }">
         <Badge
@@ -53,7 +51,7 @@
           />
         </div>
       </template>
-    </Table>
+    </TableSimple>
   </div>
 </template>
 
@@ -63,6 +61,10 @@ import ScheduleViewModal from '~/components/ProjectProgress/ScheduleViewModal.vu
 import type { IProjectProgress } from '~/loaders/project-detail'
 import { getStatusColor } from '~/constants/config'
 
+const emits = defineEmits<{
+  (e: 'refresh'): void
+}>()
+
 const props = defineProps<{
   projectId: string
   productId?: string
@@ -70,6 +72,7 @@ const props = defineProps<{
 }>()
 
 const loader = useProjectProgressLoader(props.projectId)
+const project = useProjectsPageLoader()
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
@@ -95,7 +98,7 @@ const columnVisibility = ref({
 })
 
 const products = computed(() => {
-  const uniqueProducts = loader.fetch.items.reduce((acc, target) => {
+  const uniqueProducts = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
     if (target.products && !acc.some((p) => p.id === target.products!.id)) {
       acc.push(target.products)
     }
@@ -107,7 +110,7 @@ const products = computed(() => {
 })
 
 const customers = computed(() => {
-  const uniqueCustomers = loader.fetch.items.reduce((acc, target) => {
+  const uniqueCustomers = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
     if (target.customers && !acc.some((c) => c.id === target.customers!.id)) {
       acc.push(target.customers)
     }
@@ -163,14 +166,9 @@ const formFields = createFormFields(() => [
   },
 ])
 
-const tableOptions = useTable<IProjectProgress>({
-  repo: loader,
-  options: {
-    isHidePagination: true,
-  },
-  transformItems: (items) => {
-    // filter by product_id, customer_id, status
-    return items.filter((item) => {
+const tableOptions = useTableSimple<IProjectProgress>({
+  items: () => {
+    return progressItems.value.filter((item) => {
       if (form.values.product_id && item.product_id !== form.values.product_id) {
         return false
       }
@@ -233,7 +231,10 @@ const onViewSchedule = (values: IProjectProgress) => {
   scheduleModal.open({
     progress: values,
     projectId: props.projectId,
-    zoneId: props.zoneId,
+    zoneId: props.zoneId!,
+    onRefresh: () => {
+      emits('refresh')
+    },
   })
 }
 
@@ -242,7 +243,7 @@ const onEdit = (values: IProjectProgress) => {
     isEditing: true,
     values: values,
     projectId: props.projectId,
-    zoneId: props.zoneId,
+    zoneId: props.zoneId!,
     status: () => loader.update.status,
     onSubmit: (payload: IProjectProgress) => {
       loader.updateRun(String(values.id), {
@@ -255,7 +256,7 @@ const onEdit = (values: IProjectProgress) => {
 const onAdd = () => {
   addModal.open({
     projectId: props.projectId,
-    zoneId: props.zoneId,
+    zoneId: props.zoneId!,
     status: () => loader.add.status,
     onSubmit: (payload: IProjectProgress) => {
       loader.addRun({
@@ -288,35 +289,20 @@ const onDelete = (values: IProjectProgress) => {
     })
 }
 
-// Load data
-loader.fetchSetLoading()
-onMounted(() => {
-  fetch()
-})
+const progressItems = computed(() => {
+  const items = project.find.item?.project_progresses || []
 
-const fetch = (page = 1) => {
-  const params = {
-    zone_id: props.zoneId,
-    project_id: props.projectId,
-    product_id: props.productId,
-  }
+  return items.filter((item) => {
+    if (props.productId && item.product_id !== props.productId) {
+      return false
+    }
 
-  if (!props.zoneId) {
-    delete params.zone_id
-  }
+    if (props.zoneId && item.zone_id !== props.zoneId) {
+      return false
+    }
 
-  if (!props.productId) {
-    delete params.product_id
-  }
-
-  loader.fetchPage(page, '', {
-    params,
+    return true
   })
-}
-
-// Watch for zone changes
-watch(() => props.zoneId, () => {
-  fetch()
 })
 
 // Watch for success/error states
@@ -324,7 +310,7 @@ useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    fetch()
+    emits('refresh')
     noti.success({
       title: 'แก้ไขการดำเนินการสำเร็จ',
       description: 'คุณได้แก้ไขการดำเนินการเรียบร้อยแล้ว',
@@ -377,7 +363,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    fetch()
+    emits('refresh')
     noti.success({
       title: 'เพิ่มการดำเนินการสำเร็จ',
       description: 'คุณได้เพิ่มการดำเนินการเรียบร้อยแล้ว',

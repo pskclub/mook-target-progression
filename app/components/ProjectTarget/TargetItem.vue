@@ -2,8 +2,10 @@
   <Card class="min-w-[300px]">
     <div class="flex justify-between">
       <div class="flex items-center gap-4">
-        <p>สินค้า: {{ row.products?.name }}</p>
-        <p>จำนวน: {{ row.amount }}</p>
+        <p class="font-bold">
+          สินค้า: {{ row.products?.name }}
+        </p>
+        <p>เป้าหมาย: {{ row.amount }}</p>
       </div>
       <DropdownMenu
         :items="[
@@ -40,7 +42,7 @@
       />
 
       <p v-if="projectProgressesByProductId.length">
-        จำนวน {{ projectProgressesByProductId.length }} รายการ
+        ผลการค้นหา {{ projectProgressesByProductId.length }} รายการ
       </p>
       <Empty v-else />
       <div
@@ -49,7 +51,9 @@
         class="space-y-2"
       >
         <div class="flex flex-col">
-          <p>{{ progress.customers?.name }} </p>
+          <p class="font-medium">
+            {{ progress.customers?.name }}
+          </p>
           <div class="flex gap-2">
             <Badge
               variant="subtle"

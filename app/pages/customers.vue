@@ -1,13 +1,15 @@
 <template>
   <div>
-    <div class="mb-8">
-      <Button
-        trailing-icon="ph:plus"
-        @click="onAdd"
-      >
-        เพิ่ม Customer
-      </Button>
-    </div>
+    <TeleportSafe to="#header-right">
+      <div>
+        <Button
+          trailing-icon="ph:plus"
+          @click="onAdd"
+        >
+          เพิ่ม Customer
+        </Button>
+      </div>
+    </TeleportSafe>
     <Table
       :options="tableOptions"
       @pageChange="customer.fetchPageChange"

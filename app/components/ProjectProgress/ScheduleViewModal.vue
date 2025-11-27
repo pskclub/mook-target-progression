@@ -39,10 +39,8 @@
 
       <!-- Table View -->
       <div v-if="viewMode === 'table'">
-        <Table
+        <TableSimple
           :options="tableOptions"
-          @pageChange="loader.fetchPageChange"
-          @search="loader.fetchSearch"
         >
           <template #actions-cell="{ row }">
             <div class="flex justify-end">
@@ -58,13 +56,13 @@
               />
             </div>
           </template>
-        </Table>
+        </TableSimple>
       </div>
 
       <!-- Calendar View -->
       <div v-else>
         <CalendarView
-          :schedules="loader.fetch.items"
+          :schedules="scheduleItems"
           @scheduleClick="onEdit"
         />
       </div>
@@ -83,21 +81,31 @@ const props = defineProps<{
   progress: IProjectProgress
   projectId: string
   zoneId: string
+  onRefresh: () => void
 }>()
 
 const viewMode = ref<'table' | 'calendar'>('calendar')
 const loader = useProjectScheduleLoader(props.projectId)
+const project = useProjectsPageLoader()
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 
-const tableOptions = useTable({
-  repo: loader,
-  options: {
-    isHidePagination: true,
-  },
+const scheduleItems = computed(() => {
+  return (ArrayHelper.toArray(project.find.item?.project_schedules) as IProjectSchedule[])
+    .filter((item) => {
+      if (props.zoneId && item.zone_id !== props.zoneId) {
+        return false
+      }
+
+      return true
+    })
+})
+
+const tableOptions = useTableSimple({
+  items: () => scheduleItems.value,
   columns: () => [
     {
       accessorKey: 'date',
@@ -194,27 +202,12 @@ const onDelete = (values: IProjectSchedule) => {
     })
 }
 
-// Load data
-loader.fetchSetLoading()
-onMounted(() => {
-  fetch()
-})
-
-const fetch = (page = 1) => {
-  loader.fetchPage(page, '', {
-    params: {
-      project_id: props.projectId,
-      progress_id: props.progress.id,
-    },
-  })
-}
-
 // Watch for success/error states
 useWatchTrue(
   () => loader.update.status.isSuccess,
   () => {
     editModal.close()
-    fetch()
+    props.onRefresh()
     noti.success({
       title: 'แก้ไขกำหนดการสำเร็จ',
       description: 'คุณได้แก้ไขกำหนดการเรียบร้อยแล้ว',
@@ -240,7 +233,7 @@ useWatchTrue(
 useWatchTrue(
   () => loader.delete.status.isSuccess,
   () => {
-    fetch()
+    props.onRefresh()
     dialog.close()
     noti.success({
       title: 'ลบกำหนดการสำเร็จ',
@@ -267,7 +260,7 @@ useWatchTrue(
   () => loader.add.status.isSuccess,
   () => {
     addModal.close()
-    fetch()
+    props.onRefresh()
     noti.success({
       title: 'เพิ่มกำหนดการสำเร็จ',
       description: 'คุณได้เพิ่มกำหนดการเรียบร้อยแล้ว',

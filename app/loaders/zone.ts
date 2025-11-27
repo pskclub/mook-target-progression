@@ -3,7 +3,7 @@ export interface IZone {
   name: string
 }
 
-export const useZonePageLoader = () => {
+export const useZonePageLoader = defineStore('zone', () => {
   return usePageLoader<IZone>({
     baseURL: '/zones',
     getBaseRequestOptions: () => {
@@ -17,4 +17,4 @@ export const useZonePageLoader = () => {
       }
     },
   })
-}
+})

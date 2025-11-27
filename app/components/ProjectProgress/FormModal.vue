@@ -97,20 +97,7 @@ const formFields = createFormFields(() => [
       label: 'สถานะ',
       name: 'status',
       required: true,
-      options: [
-        {
-          label: 'ขาลง',
-          value: 'PENDING',
-        },
-        {
-          label: 'ขาขึ้น',
-          value: 'APPROVED',
-        },
-        {
-          label: 'ยกเลิก',
-          value: 'REJECTED',
-        },
-      ],
+      options: statusOptions,
     },
   },
 ])

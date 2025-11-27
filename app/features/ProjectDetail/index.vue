@@ -85,14 +85,11 @@
               <button
                 v-for="zone in zoneLoader.fetch.items"
                 :key="zone.id"
-                class="w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
-                :style="{
-                  backgroundColor: textToHexColor(zone.name),
-                }"
+                class="hover:bg-primary-200 w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
                 :class="
                   selectedZoneId === zone.id
-                    ? ''
-                    : 'hover:opacity-80'
+                    ? 'bg-primary text-white hover:opacity-80'
+                    : 'border border-gray-200 bg-white text-black'
                 "
                 @click="selectedZoneId = zone.id"
               >
@@ -109,6 +106,9 @@
 
           <!-- Content Area -->
           <div class="flex-1">
+            <p class="text-xl font-bold">
+              เขต: {{ zoneLoader.fetch.items.find((zone) => zone.id === selectedZoneId)?.name }}
+            </p>
             <!-- Loading Skeleton -->
             <div
               v-if="zoneLoader.fetch.status.isLoading"

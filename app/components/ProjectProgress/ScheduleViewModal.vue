@@ -45,6 +45,12 @@
           <template #actions-cell="{ row }">
             <div class="flex justify-end">
               <ButtonActionIcon
+                v-if="row.original.histories?.length > 0"
+                icon="ph:clock-counter-clockwise"
+                color="error"
+                @click="onViewHistory(row.original)"
+              />
+              <ButtonActionIcon
                 icon="ph:pencil-simple"
                 color="neutral"
                 @click="onEdit(row.original)"
@@ -64,6 +70,7 @@
         <CalendarView
           :schedules="scheduleItems"
           @scheduleClick="onEdit"
+          @historyClick="onViewHistory"
         />
       </div>
     </template>
@@ -92,6 +99,7 @@ const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
+const historyModal = overlay.create(FormModal)
 
 const scheduleItems = computed(() => {
   return (ArrayHelper.toArray(project.find.item?.project_schedules) as IProjectSchedule[])
@@ -149,6 +157,18 @@ const tableOptions = useTableSimple({
     },
   ],
 })
+
+const onViewHistory = (values: IProjectSchedule) => {
+  historyModal.open({
+    projectId: props.projectId,
+    isViewHistory: true,
+    values: values,
+    status: () => ({
+      isLoading: false,
+    }),
+    onSubmit: () => {},
+  })
+}
 
 const onEdit = (values: IProjectSchedule) => {
   editModal.open({

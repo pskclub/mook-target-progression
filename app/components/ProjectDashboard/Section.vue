@@ -66,6 +66,16 @@
       </Card>
       <Card class="text-center">
         <div class="p-3">
+          <p class="text-2xl font-bold text-red-500">
+            {{ postponeStats.totalPostpones }}
+          </p>
+          <p class="text-xs text-gray-500">
+            เลื่อนนัด
+          </p>
+        </div>
+      </Card>
+      <Card class="text-center">
+        <div class="p-3">
           <p class="text-2xl font-bold text-green-600">
             {{ stats.totalCustomers }}
           </p>
@@ -196,6 +206,131 @@
             />
             <p>ทุกเขตดำเนินการได้ดี!</p>
           </div>
+        </div>
+      </Card>
+    </div>
+
+    <!-- Postpone Stats Section -->
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <!-- Most Postponed Schedules -->
+      <Card>
+        <div class="mb-4 flex items-center gap-2">
+          <Icon
+            name="ph:clock-counter-clockwise"
+            class="size-5 text-red-500"
+          />
+          <h3 class="text-lg font-bold">
+            กำหนดการที่เลื่อนบ่อย
+          </h3>
+        </div>
+        <div class="space-y-2">
+          <Card
+            v-for="item in mostPostponedSchedules"
+            :key="item.schedule.id"
+            :ui="{
+              body: 'flex items-center justify-between',
+            }"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex size-10 flex-col items-center justify-center rounded-lg bg-red-100 text-red-600"
+              >
+                <span class="text-lg font-bold">{{ item.count }}</span>
+                <span class="text-[10px]">ครั้ง</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium">
+                  {{ item.schedule.customers?.name || '-' }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ item.schedule.products?.name }} • {{ item.schedule.zones?.name }}
+                </p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500">
+                นัดปัจจุบัน
+              </p>
+              <p class="text-sm font-medium">
+                {{ formatDate(item.schedule.date) }}
+              </p>
+            </div>
+          </Card>
+        </div>
+        <div
+          v-if="mostPostponedSchedules.length === 0"
+          class="py-4 text-center text-green-600"
+        >
+          <Icon
+            name="i-heroicons-check-circle"
+            class="mx-auto mb-2 size-8"
+          />
+          <p>ไม่มีการเลื่อนนัด</p>
+        </div>
+      </Card>
+
+      <!-- Recent Postpone History -->
+      <Card>
+        <div class="mb-4 flex items-center gap-2">
+          <Icon
+            name="ph:clock-clockwise"
+            class="size-5 text-orange-500"
+          />
+          <h3 class="text-lg font-bold">
+            ประวัติการเลื่อนล่าสุด
+          </h3>
+        </div>
+        <div class="space-y-2">
+          <Card
+            v-for="item in recentPostponeHistory"
+            :key="item.id"
+            :ui="{
+              body: 'p-3',
+            }"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600"
+              >
+                <Icon
+                  name="ph:arrow-right"
+                  class="size-5"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium">
+                  {{ item.schedule.customers?.name || '-' }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ item.schedule.products?.name }}
+                </p>
+                <div class="mt-1 flex items-center gap-1 text-xs">
+                  <span class="text-red-500 line-through">{{ formatDate(item.fromDate) }}</span>
+                  <Icon
+                    name="ph:arrow-right"
+                    class="size-3 text-gray-400"
+                  />
+                  <span class="font-medium text-green-600">{{ formatDate(item.toDate) }}</span>
+                </div>
+                <p
+                  v-if="item.description"
+                  class="mt-1 truncate text-xs text-gray-500"
+                >
+                  {{ item.description }}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+        <div
+          v-if="recentPostponeHistory.length === 0"
+          class="py-4 text-center text-green-600"
+        >
+          <Icon
+            name="i-heroicons-check-circle"
+            class="mx-auto mb-2 size-8"
+          />
+          <p>ไม่มีประวัติการเลื่อนนัด</p>
         </div>
       </Card>
     </div>
@@ -614,4 +749,87 @@ const zoneProductAchievementStats = computed(() => {
     }
   }).sort((a, b) => b.totalAchievedAmount - a.totalAchievedAmount)
 })
+
+// Postpone statistics
+const postponeStats = computed(() => {
+  const schedules = project.find.item?.project_schedules || []
+
+  let totalPostpones = 0
+  let schedulesWithPostpone = 0
+
+  schedules.forEach((s) => {
+    const historyCount = s.histories?.length || 0
+
+    if (historyCount > 0) {
+      totalPostpones += historyCount
+      schedulesWithPostpone++
+    }
+  })
+
+  return {
+    totalPostpones,
+    schedulesWithPostpone,
+  }
+})
+
+// Most postponed schedules (top 5)
+const mostPostponedSchedules = computed(() => {
+  const schedules = project.find.item?.project_schedules || []
+
+  return schedules
+    .filter((s) => s.histories && s.histories.length > 0)
+    .map((s) => ({
+      schedule: s,
+      count: s.histories?.length || 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+})
+
+// Recent postpone history (latest 5)
+const recentPostponeHistory = computed(() => {
+  const schedules = project.find.item?.project_schedules || []
+  const allHistory: Array<{
+    id: string
+    schedule: typeof schedules[0]
+    fromDate: string
+    toDate: string
+    description: string
+  }> = []
+
+  schedules.forEach((schedule) => {
+    if (schedule.histories && schedule.histories.length > 0) {
+      const histories = schedule.histories!
+
+      histories.forEach((history, index) => {
+        // Calculate the "to date" - either next history date or current schedule date
+        const toDate = index < histories.length - 1
+          ? histories[index + 1]!.date
+          : schedule.date
+
+        allHistory.push({
+          id: `${schedule.id}-${index}`,
+          schedule,
+          fromDate: history.date,
+          toDate,
+          description: history.description || '',
+        })
+      })
+    }
+  })
+
+  // Sort by fromDate descending (most recent first)
+  return allHistory
+    .sort((a, b) => new Date(b.fromDate).getTime() - new Date(a.fromDate).getTime())
+    .slice(0, 5)
+})
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr)
+
+  return date.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+  })
+}
 </script>

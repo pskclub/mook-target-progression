@@ -47,6 +47,12 @@
         <template #actions-cell="{ row }">
           <div class="flex justify-end">
             <ButtonActionIcon
+              v-if="row.original.histories?.length > 0"
+              icon="ph:clock-counter-clockwise"
+              color="error"
+              @click="onViewHistory(row.original)"
+            />
+            <ButtonActionIcon
               icon="ph:pencil-simple"
               color="neutral"
               @click="onEdit(row.original)"
@@ -66,6 +72,7 @@
       <CalendarView
         :schedules="scheduleItems"
         @scheduleClick="onEdit"
+        @historyClick="onViewHistory"
       />
     </div>
   </Card>
@@ -73,7 +80,6 @@
 
 <script lang="ts" setup>
 import FormModal from '~/components/ProjectSchedule/FormModal.vue'
-import CalendarModal from '~/components/ProjectSchedule/CalendarModal.vue'
 import CalendarView from '~/components/ProjectSchedule/CalendarView.vue'
 import type { IProjectSchedule } from '~/loaders/project-detail'
 
@@ -90,7 +96,7 @@ const dialog = useDialog()
 const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
-const calendarModal = overlay.create(CalendarModal)
+const historyModal = overlay.create(FormModal)
 const columnVisibility = ref({
   date: true,
   zone: !props.zoneId,
@@ -101,6 +107,18 @@ const columnVisibility = ref({
 })
 
 const viewMode = ref<'table' | 'calendar'>('calendar')
+
+const onViewHistory = (values: IProjectSchedule) => {
+  historyModal.open({
+    projectId: props.projectId,
+    isViewHistory: true,
+    values: values,
+    status: () => ({
+      isLoading: false,
+    }),
+    onSubmit: () => {},
+  })
+}
 
 const onEdit = (values: IProjectSchedule) => {
   editModal.open({

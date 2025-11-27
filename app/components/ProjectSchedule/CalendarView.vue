@@ -89,14 +89,33 @@
               :class="getDayCellClass(day)"
             >
               <div
-                v-for="schedule in getSchedulesForRowAndDate(row.key, day.fullDate)"
-                :key="schedule.id"
-                class="min-h-7 w-full cursor-pointer rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
-                :class="getScheduleClass(schedule)"
-                :title="`${schedule.products?.name} - ${schedule.customers?.name}${schedule.description ? ': ' + schedule.description : ''}`"
-                @click="onScheduleClick(schedule)"
+                v-for="item in getItemsForRowAndDate(row.key, day.fullDate)"
+                :key="item.id"
+                class="group relative min-h-7 w-full rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
+                :class="getItemClass(item)"
+                :title="getItemTitle(item)"
+                @click="onItemClick(item)"
               >
-                {{ schedule.description || '✓' }}
+                <div class="flex items-start justify-between gap-0.5">
+                  <span class="flex-1">
+                    <span
+                      v-if="item.isHistory"
+                      class="mr-0.5"
+                    >⏱</span>
+                    {{ item.description || '✓' }}
+                  </span>
+                  <button
+                    v-if="!item.isHistory && hasHistories(item.parentSchedule)"
+                    color="warning"
+                    :title="`ดูประวัติการเลื่อน (${item.parentSchedule.histories.length} ครั้ง)`"
+                    @click.stop="onHistoryClick(item.parentSchedule)"
+                  >
+                    <Icon
+                      name="ph:clock-counter-clockwise"
+                      class="text-warning h-3 w-3 cursor-pointer"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -113,7 +132,7 @@
     </div>
 
     <!-- Legend -->
-    <div class="mt-4 flex items-center gap-4 text-xs text-gray-600">
+    <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
       <div class="flex items-center gap-1">
         <div class="bg-primary/20 flex h-4 w-4 items-center justify-center rounded">
           <Icon
@@ -122,6 +141,21 @@
           />
         </div>
         <span>มีกำหนดการ</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="border-error-300 bg-error-100 flex h-4 w-4 items-center justify-center rounded border">
+          ⏱
+        </div>
+        <span class="text-error">นัดที่ถูกเลื่อน</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="border-warning-300 bg-warning-100 flex h-4 w-4 items-center justify-center rounded border">
+          <Icon
+            name="ph:clock-counter-clockwise"
+            class="text-warning h-3 w-3"
+          />
+        </div>
+        <span class="text-warning">มีประวัติเลื่อนนัด</span>
       </div>
       <div class="flex items-center gap-1">
         <div class="bg-primary flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-white">
@@ -138,6 +172,7 @@ import type { IProjectSchedule } from '~/loaders/project-detail'
 
 const emits = defineEmits<{
   scheduleClick: [IProjectSchedule]
+  historyClick: [IProjectSchedule]
 }>()
 
 const props = defineProps<{
@@ -173,11 +208,19 @@ interface TimelineDay {
   fullDate: Date
 }
 
+interface CalendarItem {
+  id: string
+  date: string
+  description: string
+  isHistory: boolean
+  parentSchedule: IProjectSchedule
+}
+
 interface TimelineRow {
   key: string
   productName: string
   customerName: string
-  schedules: IProjectSchedule[]
+  items: CalendarItem[]
 }
 
 interface MonthHeader {
@@ -186,9 +229,40 @@ interface MonthHeader {
   days: number
 }
 
-// Calculate date range from schedules
+// Get all calendar items (schedules + histories)
+const allCalendarItems = computed<CalendarItem[]>(() => {
+  const items: CalendarItem[] = []
+
+  props.schedules.forEach((schedule) => {
+    // Add main schedule
+    items.push({
+      id: `schedule-${schedule.id}`,
+      date: schedule.date,
+      description: schedule.description,
+      isHistory: false,
+      parentSchedule: schedule,
+    })
+
+    // Add history items
+    if (schedule.histories && schedule.histories.length > 0) {
+      schedule.histories.forEach((history, index) => {
+        items.push({
+          id: `history-${schedule.id}-${index}`,
+          date: history.date,
+          description: history.description,
+          isHistory: true,
+          parentSchedule: schedule,
+        })
+      })
+    }
+  })
+
+  return items
+})
+
+// Calculate date range from schedules (including histories)
 const dateRange = computed(() => {
-  if (props.schedules.length === 0) {
+  if (allCalendarItems.value.length === 0) {
     const today = new Date()
 
     return {
@@ -197,7 +271,7 @@ const dateRange = computed(() => {
     }
   }
 
-  const dates = props.schedules.map((s) => new Date(s.date).getTime())
+  const dates = allCalendarItems.value.map((item) => new Date(item.date).getTime())
   const minDate = new Date(Math.min(...dates))
   const maxDate = new Date(Math.max(...dates))
 
@@ -304,11 +378,12 @@ const monthHeaders = computed<MonthHeader[]>(() => {
   return headers
 })
 
-// Group schedules by product + customer combination (all schedules)
+// Group calendar items by product + customer combination
 const timelineRows = computed<TimelineRow[]>(() => {
   const rowMap = new Map<string, TimelineRow>()
 
-  props.schedules.forEach((schedule) => {
+  allCalendarItems.value.forEach((item) => {
+    const schedule = item.parentSchedule
     const key = `${schedule.product_id}-${schedule.customer_id}`
 
     if (!rowMap.has(key)) {
@@ -316,11 +391,11 @@ const timelineRows = computed<TimelineRow[]>(() => {
         key,
         productName: schedule.products?.name || '-',
         customerName: schedule.customers?.name || '-',
-        schedules: [],
+        items: [],
       })
     }
 
-    rowMap.get(key)!.schedules.push(schedule)
+    rowMap.get(key)!.items.push(item)
   })
 
   // Sort by product name, then customer name
@@ -332,20 +407,20 @@ const timelineRows = computed<TimelineRow[]>(() => {
   })
 })
 
-const getSchedulesForRowAndDate = (
+const getItemsForRowAndDate = (
   rowKey: string,
   date: Date,
-): IProjectSchedule[] => {
+): CalendarItem[] => {
   const row = timelineRows.value.find((r) => r.key === rowKey)
   if (!row) return []
 
-  return row.schedules.filter((schedule) => {
-    const scheduleDate = new Date(schedule.date)
+  return row.items.filter((item) => {
+    const itemDate = new Date(item.date)
 
     return (
-      scheduleDate.getDate() === date.getDate()
-      && scheduleDate.getMonth() === date.getMonth()
-      && scheduleDate.getFullYear() === date.getFullYear()
+      itemDate.getDate() === date.getDate()
+      && itemDate.getMonth() === date.getMonth()
+      && itemDate.getFullYear() === date.getFullYear()
     )
   })
 }
@@ -364,11 +439,50 @@ const getDayCellClass = (day: TimelineDay) => {
   return classes.join(' ')
 }
 
-const getScheduleClass = (_schedule: IProjectSchedule) => {
-  return 'bg-primary/20 text-primary hover:bg-primary/30'
+const hasHistories = (schedule: IProjectSchedule) => {
+  return schedule.histories && schedule.histories.length > 0
 }
 
-const onScheduleClick = (schedule: IProjectSchedule) => {
-  emits('scheduleClick', schedule)
+const getItemClass = (item: CalendarItem) => {
+  if (item.isHistory) {
+    // History items - red, no hover effect (not clickable for edit)
+    return 'bg-red-100 text-red-700 border border-red-300 cursor-default'
+  }
+
+  // Current schedule with histories - primary with red accent
+  if (hasHistories(item.parentSchedule)) {
+    return 'bg-warning/20 text-warning-700 hover:bg-warning/30 cursor-pointer ring-2 ring-warning-300'
+  }
+
+  // Normal schedule
+  return 'bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer'
+}
+
+const getItemTitle = (item: CalendarItem) => {
+  const schedule = item.parentSchedule
+
+  if (item.isHistory) {
+    return `[ประวัติเลื่อน] ${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}`
+  }
+
+  const historyText = hasHistories(schedule)
+    ? ` (มีประวัติเลื่อน ${schedule.histories.length} ครั้ง)`
+    : ''
+
+  return `${schedule.products?.name} - ${schedule.customers?.name}${item.description ? ': ' + item.description : ''}${historyText}`
+}
+
+const onItemClick = (item: CalendarItem) => {
+  if (item.isHistory) {
+    // History item - open history view modal
+    emits('historyClick', item.parentSchedule)
+  } else {
+    // Normal schedule - open edit modal
+    emits('scheduleClick', item.parentSchedule)
+  }
+}
+
+const onHistoryClick = (schedule: IProjectSchedule) => {
+  emits('historyClick', schedule)
 }
 </script>

@@ -29,6 +29,10 @@ export interface IProjectSchedule {
   progress_id?: number
   description: string
   date: string
+  histories: {
+    date: string
+    description: string
+  }[]
   created_at: string
   products?: { name: string }
   zones?: { name: string }

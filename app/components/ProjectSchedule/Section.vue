@@ -32,6 +32,7 @@
     <!-- Table View -->
     <div v-if="viewMode === 'table'">
       <TableSimple
+        v-model:column-visibility="columnVisibility"
         :options="tableOptions"
       >
         <template #actions-cell="{ row }">
@@ -81,6 +82,15 @@ const noti = useNotification()
 const editModal = overlay.create(FormModal)
 const addModal = overlay.create(FormModal)
 const calendarModal = overlay.create(CalendarModal)
+const columnVisibility = ref({
+  date: true,
+  zone: !props.zoneId,
+  products_name: true,
+  customers_name: true,
+  description: true,
+  actions: true,
+})
+
 const viewMode = ref<'table' | 'calendar'>('calendar')
 
 const onEdit = (values: IProjectSchedule) => {
@@ -232,6 +242,14 @@ const tableOptions = useTableSimple({
       accessorKey: 'date',
       header: 'วันที่',
       type: COLUMN_TYPES.DATE,
+    },
+    {
+      accessorKey: 'zone',
+      header: 'Zone',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.zones?.name || '-',
     },
     {
       accessorKey: 'products.name',

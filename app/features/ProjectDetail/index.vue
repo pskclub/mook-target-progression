@@ -19,19 +19,19 @@
       variant="link"
       :items="[
         {
-          label: 'Products',
+          label: `Products (${project.find.item?.project_targets?.length || 0})`,
           icon: 'i-lucide-user',
           value: 'target',
           slot: 'target',
         },
         {
-          label: 'Progress',
+          label: `Progress (${project.find.item?.project_progresses?.length || 0})`,
           icon: 'i-lucide-lock',
           slot: 'progress',
           value: 'progress',
         },
         {
-          label: 'Calendar',
+          label: `Calendar (${project.find.item?.project_schedules?.length || 0})`,
           icon: 'i-lucide-lock',
           slot: 'schedule',
           value: 'schedule',
@@ -65,7 +65,10 @@
             v-model="selectedZoneId"
             class="w-[300px]"
             :items="zoneLoader.fetch.items.map((zone) => ({
-              label: zone.name,
+              label: `${zone.name} ${project.find.item?.project_progresses?.
+                filter((item: any) => item.zone_id === zone.id)?.length || 0 > 0
+                ? `(${project.find.item?.project_progresses?.filter((item: any) => item.zone_id === zone.id)?.length || 0})`
+                : ''}`,
               value: zone.id,
             }))"
             size="xl"
@@ -101,6 +104,13 @@
             />
 
             <!-- Schedule Section -->
+            <p class="text-xl font-bold">
+              กำหนดการ <span
+                v-if="project.find.item?.project_schedules?.
+                  filter((item: any) => item.zone_id === selectedZoneId)?.length || 0 > 0"
+              >({{ project.find.item?.project_schedules?.
+                filter((item: any) => item.zone_id === selectedZoneId)?.length || 0 }})</span>
+            </p>
             <ProjectScheduleSection
               :project-id="projectId"
               :zone-id="selectedZoneId"

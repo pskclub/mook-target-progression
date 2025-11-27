@@ -2,7 +2,7 @@
   <Modal
     :close="{ onClick: () => emits('close', false) }"
     :dismissible="true"
-    title="กำหนดการของการดำเนินการ"
+    :title="`กำหนดการของการดำเนินการ ${scheduleItems.length > 0 ? `(${scheduleItems.length})` : ''}`"
     description="จัดการกำหนดการสำหรับการดำเนินการนี้"
     :ui="{
       content: 'max-w-4xl',
@@ -97,6 +97,10 @@ const scheduleItems = computed(() => {
   return (ArrayHelper.toArray(project.find.item?.project_schedules) as IProjectSchedule[])
     .filter((item) => {
       if (props.zoneId && item.zone_id !== props.zoneId) {
+        return false
+      }
+
+      if (props.progress.id && item.progress_id !== props.progress.id) {
         return false
       }
 

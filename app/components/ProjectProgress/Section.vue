@@ -30,15 +30,7 @@
         </Badge>
       </template>
       <template #actions-cell="{ row }">
-        <div class="flex justify-end gap-2">
-          <Button
-            size="xs"
-            variant="ghost"
-            leading-icon="ph:calendar"
-            @click="onViewSchedule(row.original)"
-          >
-            กำหนดการ
-          </Button>
+        <div class="flex justify-start gap-2">
           <ButtonActionIcon
             icon="ph:pencil-simple"
             color="neutral"
@@ -49,6 +41,24 @@
             color="error"
             @click="onDelete(row.original)"
           />
+          <Button
+            size="xs"
+            variant="ghost"
+            leading-icon="ph:calendar"
+            @click="onViewSchedule(row.original)"
+          >
+            กำหนดการ <Badge
+              v-if="project.find.item?.project_schedules?.
+                filter((item: any) => item.progress_id === row.original.id)?.length || 0 > 0"
+              variant="subtle"
+              color="warning"
+            >
+              {{
+                project.find.item?.project_schedules?.
+                  filter((item: any) => item.progress_id === row.original.id)?.length || 0
+              }}
+            </Badge>
+          </Button>
         </div>
       </template>
     </TableSimple>
@@ -171,6 +181,14 @@ const tableOptions = useTableSimple<IProjectProgress>({
   },
   columns: () => [
     {
+      accessorKey: 'zone',
+      header: 'Zone',
+      type: COLUMN_TYPES.TEXT,
+      cell: ({
+        row,
+      }: any) => row.original.zones?.name || '-',
+    },
+    {
       accessorKey: 'products.name',
       header: 'Product',
       type: COLUMN_TYPES.TEXT,
@@ -185,14 +203,6 @@ const tableOptions = useTableSimple<IProjectProgress>({
       cell: ({
         row,
       }: any) => row.original.customers?.name || '-',
-    },
-    {
-      accessorKey: 'zone',
-      header: 'Zone',
-      type: COLUMN_TYPES.TEXT,
-      cell: ({
-        row,
-      }: any) => row.original.zones?.name || '-',
     },
     {
       accessorKey: 'status',
@@ -293,6 +303,9 @@ const progressItems = computed(() => {
 
     return true
   }).sort((a, b) => {
+    const zoneCompare = (a.zones?.name || '').localeCompare(b.zones?.name || '')
+    if (zoneCompare !== 0) return zoneCompare
+
     const productCompare = (a.products?.name || '').localeCompare(b.products?.name || '')
     if (productCompare !== 0) return productCompare
 

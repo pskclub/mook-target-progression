@@ -57,98 +57,65 @@
         />
       </template>
       <template #zone>
-        <!-- Zone Tabs and Content -->
-        <div class="flex gap-6">
-          <!-- Vertical Zone Tabs -->
-          <Card class="h-fit w-64 shrink-0">
-            <h3 class="mb-4 font-semibold">
-              เขต (Zones)
-            </h3>
+        <div class="mb-6 flex items-center gap-4">
+          <p class="text-xl font-bold">
+            เลือกเขต:
+          </p>
+          <SelectMenu
+            v-model="selectedZoneId"
+            class="w-[300px]"
+            :items="zoneLoader.fetch.items.map((zone) => ({
+              label: zone.name,
+              value: zone.id,
+            }))"
+            size="xl"
+            :loading="zoneLoader.fetch.status.isLoading"
+            placeholder="เลือกเขต"
+            value-key="value"
+            label-key="label"
+          />
+        </div>
+        <!-- Vertical Zone Tabs -->
+        <div class="flex-1">
+          <!-- Loading Skeleton -->
+          <div
+            v-if="zoneLoader.fetch.status.isLoading"
+            class="space-y-8"
+          >
+            <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
+            <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
+            <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
+          </div>
 
-            <!-- Loading Skeleton -->
-            <div
-              v-if="zoneLoader.fetch.status.isLoading"
-              class="space-y-2"
-            >
-              <div
-                v-for="i in 3"
-                :key="i"
-                class="h-12 w-full animate-pulse rounded-lg bg-gray-100"
-              />
-            </div>
+          <div
+            v-else-if="selectedZoneId"
+            class="space-y-8"
+          >
+            <!-- Target of Product Section -->
 
-            <!-- Zone List -->
-            <div
-              v-else
-              class="space-y-2"
-            >
-              <button
-                v-for="zone in zoneLoader.fetch.items"
-                :key="zone.id"
-                class="hover:bg-primary-200 hover:text-black w-full cursor-pointer rounded-lg px-4 py-3 text-left transition-colors"
-                :class="
-                  selectedZoneId === zone.id
-                    ? 'bg-primary text-white hover:opacity-80'
-                    : 'border border-gray-200 bg-white text-black'
-                "
-                @click="selectedZoneId = zone.id"
-              >
-                {{ zone.name }}
-              </button>
-              <div
-                v-if="zoneLoader.fetch.items.length === 0"
-                class="py-4 text-center text-sm text-gray-500"
-              >
-                ไม่มีข้อมูลเขต
+            <!-- Project Progress Section -->
+            <ProjectProgressSection
+              :project-id="projectId"
+              :zone-id="selectedZoneId"
+              @refresh="onRefresh"
+            />
+
+            <!-- Schedule Section -->
+            <ProjectScheduleSection
+              :project-id="projectId"
+              :zone-id="selectedZoneId"
+              @refresh="onRefresh"
+            />
+          </div>
+          <div
+            v-else
+            class="flex h-64 items-center justify-center"
+          >
+            <Card class="w-full">
+              <div class="p-8 text-center text-gray-500">
+                กรุณาเลือกเขตเพื่อดูข้อมูล
               </div>
-            </div>
-          </Card>
-
-          <!-- Content Area -->
-          <div class="flex-1">
-            <p class="text-xl font-bold">
-              เขต: {{ zoneLoader.fetch.items.find((zone) => zone.id === selectedZoneId)?.name }}
-            </p>
-            <!-- Loading Skeleton -->
-            <div
-              v-if="zoneLoader.fetch.status.isLoading"
-              class="space-y-8"
-            >
-              <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
-              <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
-              <div class="h-[300px] w-full animate-pulse rounded-lg bg-gray-100" />
-            </div>
-
-            <div
-              v-else-if="selectedZoneId"
-              class="space-y-8"
-            >
-              <!-- Target of Product Section -->
-
-              <!-- Project Progress Section -->
-              <ProjectProgressSection
-                :project-id="projectId"
-                :zone-id="selectedZoneId"
-                @refresh="onRefresh"
-              />
-
-              <!-- Schedule Section -->
-              <ProjectScheduleSection
-                :project-id="projectId"
-                :zone-id="selectedZoneId"
-                @refresh="onRefresh"
-              />
-            </div>
-            <div
-              v-else
-              class="flex h-64 items-center justify-center"
-            >
-              <Card class="w-full">
-                <div class="p-8 text-center text-gray-500">
-                  กรุณาเลือกเขตเพื่อดูข้อมูล
-                </div>
-              </Card>
-            </div>
+            </Card>
           </div>
         </div>
       </template>
@@ -175,7 +142,7 @@ const project = useProjectsPageLoader()
 const zoneLoader = useZonePageLoader()
 const isTabActive = ref('target')
 // Selected zone state
-const selectedZoneId = ref<string | null>(null)
+const selectedZoneId = ref<string | undefined>(undefined)
 const overlay = useOverlay()
 const dialog = useDialog()
 const noti = useNotification()

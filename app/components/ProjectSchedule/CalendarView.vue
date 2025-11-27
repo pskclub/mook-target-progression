@@ -1,69 +1,133 @@
 <template>
-  <!-- Calendar Header -->
-  <div class="mb-4 flex items-center justify-between">
-    <Button
-      icon="ph:caret-left"
-      variant="ghost"
-      @click="previousMonth"
-    >
-      เดือนก่อน
-    </Button>
-    <h3 class="text-lg font-semibold">
-      {{ currentMonthYear }}
-    </h3>
-    <Button
-      trailing-icon="ph:caret-right"
-      variant="ghost"
-      @click="nextMonth"
-    >
-      เดือนถัดไป
-    </Button>
-  </div>
-
-  <!-- Calendar Grid -->
-  <div class="grid grid-cols-7 gap-2">
-    <!-- Day Headers -->
-    <div
-      v-for="day in dayHeaders"
-      :key="day"
-      class="p-2 text-center text-sm font-semibold text-gray-600"
-    >
-      {{ day }}
+  <div class="overflow-hidden">
+    <!-- Timeline Header -->
+    <div class="mb-4 flex items-center justify-between">
+      <h3 class="text-lg font-semibold">
+        {{ dateRangeText }}
+      </h3>
+      <div class="text-sm text-gray-500">
+        {{ schedules.length }} กำหนดการ
+      </div>
     </div>
 
-    <!-- Calendar Days -->
+    <!-- Timeline Grid -->
     <div
-      v-for="(day, index) in calendarDays"
-      :key="index"
-      class="min-h-[100px] rounded-lg border p-2"
-      :class="getDayClass(day)"
+      ref="scrollContainer"
+      class="overflow-x-auto"
     >
-      <div class="mb-1 text-sm font-medium">
-        {{ day.date }}
-      </div>
-      <div
-        v-if="day.schedules.length > 0"
-        class="space-y-1"
-      >
-        <div
-          v-for="schedule in day.schedules"
-          :key="schedule.id"
-          class="bg-primary/10 cursor-pointer rounded px-2 py-1 text-xs hover:bg-primary/20"
-          @click="onScheduleClick(schedule)"
-        >
-          <div class="font-medium">
-            {{ schedule.products?.name }}
+      <div class="min-w-max ring-1 ring-gray-300">
+        <!-- Month Headers -->
+        <div class="sticky top-0 z-20 flex border-b border-gray-300">
+          <div class="sticky left-0 z-30 w-52 shrink-0 border-r border-gray-300 bg-gray-100 p-2 text-sm font-semibold">
+            เดือน
           </div>
-          <div class="text-gray-600">
-            {{ schedule.customers?.name }}
-          </div>
-          <div
-            v-if="schedule.description"
-            class="text-gray-600"
-          >
-            - {{ schedule.description }}
+          <div class="flex">
+            <div
+              v-for="month in monthHeaders"
+              :key="month.key"
+              class="shrink-0 border-r border-gray-300 bg-gray-100 px-2 py-1 text-center text-xs font-semibold"
+              :style="{ width: `${month.days * 80}px` }"
+            >
+              {{ month.label }}
+            </div>
           </div>
         </div>
+
+        <!-- Date Headers -->
+        <div class="sticky top-[37px] z-20 flex border-b border-gray-300">
+          <div class="sticky left-0 z-30 w-52 shrink-0 border-r border-gray-300 bg-gray-50 p-2 text-sm font-semibold">
+            สินค้า / ลูกค้า
+          </div>
+          <div class="flex">
+            <div
+              v-for="day in allDays"
+              :key="day.key"
+              class="w-20 shrink-0 border-r border-gray-300 p-0.5 text-center text-xs"
+              :class="getDayHeaderClass(day)"
+            >
+              <div class="text-[10px] text-gray-400">
+                {{ day.dayOfWeek }}
+              </div>
+              <div
+                class="mx-auto flex h-5 w-5 items-center justify-center text-[11px]"
+                :class="day.isToday ? 'bg-primary rounded-full text-white' : ''"
+              >
+                {{ day.date }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product/Customer Rows -->
+        <div
+          v-for="row in timelineRows"
+          :key="row.key"
+          class="flex border-b border-gray-300 hover:bg-gray-50/50"
+        >
+          <!-- Row Label -->
+          <div class="sticky left-0 z-10 w-52 shrink-0 border-r border-gray-300 bg-white p-2">
+            <div
+              class="truncate text-sm font-medium"
+              :title="row.productName"
+            >
+              {{ row.productName }}
+            </div>
+            <div
+              class="truncate text-xs text-gray-500"
+              :title="row.customerName"
+            >
+              {{ row.customerName }}
+            </div>
+          </div>
+
+          <!-- Timeline Cells -->
+          <div class="flex">
+            <div
+              v-for="day in allDays"
+              :key="day.key"
+              class="w-20 shrink-0 border-r border-gray-300 p-0.5"
+              :class="getDayCellClass(day)"
+            >
+              <div
+                v-for="schedule in getSchedulesForRowAndDate(row.key, day.fullDate)"
+                :key="schedule.id"
+                class="min-h-7 w-full cursor-pointer rounded px-1 py-0.5 text-[10px] leading-tight font-medium break-words whitespace-pre-line"
+                :class="getScheduleClass(schedule)"
+                :title="`${schedule.products?.name} - ${schedule.customers?.name}${schedule.description ? ': ' + schedule.description : ''}`"
+                @click="onScheduleClick(schedule)"
+              >
+                {{ schedule.description || '✓' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div
+          v-if="timelineRows.length === 0"
+          class="flex items-center justify-center py-12 text-gray-500"
+        >
+          ไม่มีกำหนดการ
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="mt-4 flex items-center gap-4 text-xs text-gray-600">
+      <div class="flex items-center gap-1">
+        <div class="bg-primary/20 flex h-4 w-4 items-center justify-center rounded">
+          <Icon
+            name="ph:check-circle-fill"
+            class="text-primary h-3 w-3"
+          />
+        </div>
+        <span>มีกำหนดการ</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <div class="bg-primary flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-white">
+          {{ new Date().getDate() }}
+        </div>
+        <span>วันนี้</span>
       </div>
     </div>
   </div>
@@ -80,81 +144,202 @@ const props = defineProps<{
   schedules: IProjectSchedule[]
 }>()
 
-const currentDate = ref(new Date())
+const scrollContainer = ref<HTMLElement | null>(null)
+const dayOfWeekNames: string[] = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+const monthNames: string[] = [
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
+]
 
-const dayHeaders = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
-
-const currentMonthYear = computed(() => {
-  return currentDate.value.toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'long',
-  })
-})
-
-interface CalendarDay {
+interface TimelineDay {
+  key: string
   date: number
-  isCurrentMonth: boolean
-  schedules: IProjectSchedule[]
+  month: number
+  year: number
+  dayOfWeek: string
+  isToday: boolean
+  isWeekend: boolean
+  isFirstOfMonth: boolean
   fullDate: Date
 }
 
-const calendarDays = computed<CalendarDay[]>(() => {
-  const year = currentDate.value.getFullYear()
-  const month = currentDate.value.getMonth()
+interface TimelineRow {
+  key: string
+  productName: string
+  customerName: string
+  schedules: IProjectSchedule[]
+}
 
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const daysInMonth = lastDay.getDate()
-  const startingDayOfWeek = firstDay.getDay()
+interface MonthHeader {
+  key: string
+  label: string
+  days: number
+}
 
-  const days: CalendarDay[] = []
+// Calculate date range from schedules
+const dateRange = computed(() => {
+  if (props.schedules.length === 0) {
+    const today = new Date()
 
-  // Previous month days
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
+    return {
+      start: today,
+      end: today,
+    }
+  }
 
-  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-    const date = prevMonthLastDay - i
-    const fullDate = new Date(year, month - 1, date)
+  const dates = props.schedules.map((s) => new Date(s.date).getTime())
+  const minDate = new Date(Math.min(...dates))
+  const maxDate = new Date(Math.max(...dates))
+
+  // Use exact schedule dates (not full months)
+  const start = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
+  const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate())
+
+  return {
+    start,
+    end,
+  }
+})
+
+const dateRangeText = computed(() => {
+  const {
+    start, end,
+  } = dateRange.value
+
+  const startText = start.toLocaleDateString('th-TH', {
+    month: 'short',
+    year: 'numeric',
+  })
+
+  const endText = end.toLocaleDateString('th-TH', {
+    month: 'short',
+    year: 'numeric',
+  })
+
+  if (startText === endText) return startText
+
+  return `${startText} - ${endText}`
+})
+
+// Generate all days in the range
+const allDays = computed<TimelineDay[]>(() => {
+  const {
+    start, end,
+  } = dateRange.value
+
+  const today = new Date()
+  const days: TimelineDay[] = []
+
+  const current = new Date(start)
+
+  while (current <= end) {
+    const dayOfWeekIndex = current.getDay()
+    const date = current.getDate()
+    const month = current.getMonth()
+    const year = current.getFullYear()
 
     days.push({
+      key: `${year}-${month}-${date}`,
       date,
-      isCurrentMonth: false,
-      schedules: getSchedulesForDate(fullDate),
-      fullDate,
+      month,
+      year,
+      dayOfWeek: dayOfWeekNames[dayOfWeekIndex] ?? '',
+      isToday:
+        today.getDate() === date
+        && today.getMonth() === month
+        && today.getFullYear() === year,
+      isWeekend: dayOfWeekIndex === 0 || dayOfWeekIndex === 6,
+      isFirstOfMonth: date === 1,
+      fullDate: new Date(current),
     })
-  }
 
-  // Current month days
-  for (let i = 1; i <= daysInMonth; i++) {
-    const fullDate = new Date(year, month, i)
-
-    days.push({
-      date: i,
-      isCurrentMonth: true,
-      schedules: getSchedulesForDate(fullDate),
-      fullDate,
-    })
-  }
-
-  // Next month days
-  const remainingDays = 42 - days.length // 6 weeks * 7 days
-
-  for (let i = 1; i <= remainingDays; i++) {
-    const fullDate = new Date(year, month + 1, i)
-
-    days.push({
-      date: i,
-      isCurrentMonth: false,
-      schedules: getSchedulesForDate(fullDate),
-      fullDate,
-    })
+    current.setDate(current.getDate() + 1)
   }
 
   return days
 })
 
-const getSchedulesForDate = (date: Date): IProjectSchedule[] => {
-  return props.schedules.filter((schedule) => {
+// Generate month headers
+const monthHeaders = computed<MonthHeader[]>(() => {
+  const headers: MonthHeader[] = []
+  let currentMonth = -1
+  let currentYear = -1
+  let dayCount = 0
+
+  allDays.value.forEach((day, index) => {
+    if (day.month !== currentMonth || day.year !== currentYear) {
+      if (dayCount > 0 && headers.length > 0) {
+        headers[headers.length - 1]!.days = dayCount
+      }
+
+      currentMonth = day.month
+      currentYear = day.year
+      headers.push({
+        key: `${day.year}-${day.month}`,
+        label: `${monthNames[day.month] ?? ''} ${day.year + 543}`,
+        days: 0,
+      })
+
+      dayCount = 1
+    } else {
+      dayCount++
+    }
+
+    // Last day
+    if (index === allDays.value.length - 1 && headers.length > 0) {
+      headers[headers.length - 1]!.days = dayCount
+    }
+  })
+
+  return headers
+})
+
+// Group schedules by product + customer combination (all schedules)
+const timelineRows = computed<TimelineRow[]>(() => {
+  const rowMap = new Map<string, TimelineRow>()
+
+  props.schedules.forEach((schedule) => {
+    const key = `${schedule.product_id}-${schedule.customer_id}`
+
+    if (!rowMap.has(key)) {
+      rowMap.set(key, {
+        key,
+        productName: schedule.products?.name || '-',
+        customerName: schedule.customers?.name || '-',
+        schedules: [],
+      })
+    }
+
+    rowMap.get(key)!.schedules.push(schedule)
+  })
+
+  // Sort by product name, then customer name
+  return Array.from(rowMap.values()).sort((a, b) => {
+    const productCompare = a.productName.localeCompare(b.productName, 'th')
+    if (productCompare !== 0) return productCompare
+
+    return a.customerName.localeCompare(b.customerName, 'th')
+  })
+})
+
+const getSchedulesForRowAndDate = (
+  rowKey: string,
+  date: Date,
+): IProjectSchedule[] => {
+  const row = timelineRows.value.find((r) => r.key === rowKey)
+  if (!row) return []
+
+  return row.schedules.filter((schedule) => {
     const scheduleDate = new Date(schedule.date)
 
     return (
@@ -165,42 +350,22 @@ const getSchedulesForDate = (date: Date): IProjectSchedule[] => {
   })
 }
 
-const getDayClass = (day: CalendarDay) => {
-  const classes = []
+const getDayHeaderClass = (day: TimelineDay) => {
+  if (day.isWeekend) return 'bg-gray-100'
 
-  if (!day.isCurrentMonth) {
-    classes.push('bg-gray-50 text-gray-400')
-  } else {
-    classes.push('bg-white')
-  }
+  return 'bg-gray-50'
+}
 
-  const today = new Date()
-
-  if (
-    day.fullDate.getDate() === today.getDate()
-    && day.fullDate.getMonth() === today.getMonth()
-    && day.fullDate.getFullYear() === today.getFullYear()
-  ) {
-    classes.push('border-primary border-2')
-  }
+const getDayCellClass = (day: TimelineDay) => {
+  const classes: string[] = []
+  if (day.isWeekend) classes.push('bg-gray-50')
+  if (day.isFirstOfMonth) classes.push('border-l-2 border-l-gray-300')
 
   return classes.join(' ')
 }
 
-const previousMonth = () => {
-  currentDate.value = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth() - 1,
-    1,
-  )
-}
-
-const nextMonth = () => {
-  currentDate.value = new Date(
-    currentDate.value.getFullYear(),
-    currentDate.value.getMonth() + 1,
-    1,
-  )
+const getScheduleClass = (_schedule: IProjectSchedule) => {
+  return 'bg-primary/20 text-primary hover:bg-primary/30'
 }
 
 const onScheduleClick = (schedule: IProjectSchedule) => {

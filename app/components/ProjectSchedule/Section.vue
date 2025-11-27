@@ -28,6 +28,13 @@
     </Button>
   </div>
 
+  <!-- Filter section when zoneId is not provided -->
+  <FormFields
+    v-if="!zoneId"
+    :options="formFields"
+    class="mb-4 flex gap-4"
+  />
+
   <Card>
     <!-- Table View -->
     <div v-if="viewMode === 'table'">
@@ -107,6 +114,75 @@ const columnVisibility = ref({
 })
 
 const viewMode = ref<'table' | 'calendar'>('calendar')
+
+// Filter form (only used when zoneId is not provided)
+const zoneLoader = useZonePageLoader()
+const form = useForm({
+  validationSchema: toTypedSchema(
+    v.object({
+      zone_id: v.nullish(v.string()),
+      product_id: v.nullish(v.string()),
+      customer_id: v.nullish(v.string()),
+    }),
+  ),
+})
+
+const zones = computed(() => {
+  return zoneLoader.fetch.items
+})
+
+const products = computed(() => {
+  return useProjectDetail().scheduleProducts.value
+})
+
+const customers = computed(() => {
+  return useProjectDetail().scheduleCustomers.value
+})
+
+const formFields = createFormFields(() => [
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'zone_id',
+      placeholder: 'Zone',
+      clearable: true,
+      options: zones.value.map((zone) => ({
+        label: zone.name,
+        value: zone.id,
+      })),
+    },
+  },
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'product_id',
+      placeholder: 'Product',
+      clearable: true,
+      options: products.value.map((product) => ({
+        label: product.name,
+        value: product.id,
+      })),
+    },
+  },
+  {
+    type: INPUT_TYPES.SELECT,
+    class: 'w-[200px]',
+    props: {
+      label: '',
+      name: 'customer_id',
+      placeholder: 'Customer',
+      clearable: true,
+      options: customers.value.map((customer) => ({
+        label: customer.name,
+        value: customer.id,
+      })),
+    },
+  },
+])
 
 const onViewHistory = (values: IProjectSchedule) => {
   historyModal.open({
@@ -254,8 +330,24 @@ useWatchTrue(
 const scheduleItems = computed(() => {
   return (ArrayHelper.toArray(project.find.item?.project_schedules) as IProjectSchedule[])
     .filter((item) => {
+      // Filter by zoneId prop (when viewing from zone tab)
       if (props.zoneId && item.zone_id !== props.zoneId) {
         return false
+      }
+
+      // Filter by form values (when zoneId is not provided)
+      if (!props.zoneId) {
+        if (form.values.zone_id && item.zone_id !== form.values.zone_id) {
+          return false
+        }
+
+        if (form.values.product_id && item.product_id !== form.values.product_id) {
+          return false
+        }
+
+        if (form.values.customer_id && item.customer_id !== form.values.customer_id) {
+          return false
+        }
       }
 
       return true

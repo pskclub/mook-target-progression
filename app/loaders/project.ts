@@ -30,6 +30,38 @@ export const useProjectsPageLoader = defineStore('projects', () => {
           },
         }
       },
-    }
+    },
   })
 })
+
+export const useProjectDetail = () => {
+  const project = useProjectsPageLoader()
+  const products = computed(() => {
+    const uniqueProducts = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
+      if (target.products && !acc.some((p) => p.id === target.products!.id)) {
+        acc.push(target.products)
+      }
+
+      return acc
+    }, [] as IProduct[])
+
+    return uniqueProducts.sort((a: IProduct, b: IProduct) => a.name.localeCompare(b.name))
+  })
+
+  const customers = computed(() => {
+    const uniqueCustomers = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
+      if (target.customers && !acc.some((c) => c.id === target.customers!.id)) {
+        acc.push(target.customers)
+      }
+
+      return acc
+    }, [] as ICustomer[])
+
+    return uniqueCustomers.sort((a: ICustomer, b: ICustomer) => a.name.localeCompare(b.name))
+  })
+
+  return {
+    products,
+    customers,
+  }
+}

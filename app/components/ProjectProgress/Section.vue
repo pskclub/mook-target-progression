@@ -98,27 +98,11 @@ const columnVisibility = ref({
 })
 
 const products = computed(() => {
-  const uniqueProducts = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
-    if (target.products && !acc.some((p) => p.id === target.products!.id)) {
-      acc.push(target.products)
-    }
-
-    return acc
-  }, [] as IProduct[])
-
-  return uniqueProducts
+  return useProjectDetail().products.value
 })
 
 const customers = computed(() => {
-  const uniqueCustomers = ArrayHelper.toArray(project.find.item?.project_progresses).reduce((acc, target) => {
-    if (target.customers && !acc.some((c) => c.id === target.customers!.id)) {
-      acc.push(target.customers)
-    }
-
-    return acc
-  }, [] as ICustomer[])
-
-  return uniqueCustomers
+  return useProjectDetail().customers.value
 })
 
 const formFields = createFormFields(() => [
@@ -168,21 +152,22 @@ const formFields = createFormFields(() => [
 
 const tableOptions = useTableSimple<IProjectProgress>({
   items: () => {
-    return progressItems.value.filter((item) => {
-      if (form.values.product_id && item.product_id !== form.values.product_id) {
-        return false
-      }
+    return progressItems.value
+      .filter((item) => {
+        if (form.values.product_id && item.product_id !== form.values.product_id) {
+          return false
+        }
 
-      if (form.values.customer_id && item.customer_id !== form.values.customer_id) {
-        return false
-      }
+        if (form.values.customer_id && item.customer_id !== form.values.customer_id) {
+          return false
+        }
 
-      if (form.values.status && item.status !== form.values.status) {
-        return false
-      }
+        if (form.values.status && item.status !== form.values.status) {
+          return false
+        }
 
-      return true
-    })
+        return true
+      })
   },
   columns: () => [
     {
@@ -307,6 +292,11 @@ const progressItems = computed(() => {
     }
 
     return true
+  }).sort((a, b) => {
+    const productCompare = (a.products?.name || '').localeCompare(b.products?.name || '')
+    if (productCompare !== 0) return productCompare
+
+    return (a.customers?.name || '').localeCompare(b.customers?.name || '')
   })
 })
 

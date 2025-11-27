@@ -19,6 +19,12 @@
       variant="link"
       :items="[
         {
+          label: 'Dashboard',
+          icon: 'i-lucide-layout-dashboard',
+          value: 'dashboard',
+          slot: 'dashboard',
+        },
+        {
           label: `Products (${project.find.item?.project_targets?.length || 0})`,
           icon: 'i-lucide-user',
           value: 'target',
@@ -44,6 +50,9 @@
         },
       ]"
     >
+      <template #dashboard>
+        <ProjectDashboardSection />
+      </template>
       <template #target>
         <ProjectTargetSection
           :project-progresses="project.find.item?.project_progresses || []"
@@ -157,6 +166,7 @@
 import ProjectTargetSection from '~/components/ProjectTarget/Section.vue'
 import ProjectProgressSection from '~/components/ProjectProgress/Section.vue'
 import ProjectScheduleSection from '~/components/ProjectSchedule/Section.vue'
+import ProjectDashboardSection from '~/components/ProjectDashboard/Section.vue'
 import FormModal from '~/components/Project/FormModal.vue'
 
 const route = useRoute()
@@ -164,7 +174,7 @@ const projectId = route.params.id as string
 
 const project = useProjectsPageLoader()
 const zoneLoader = useZonePageLoader()
-const isTabActive = ref('target')
+const isTabActive = ref('dashboard')
 // Selected zone state
 const selectedZoneId = ref<string | undefined>(undefined)
 const overlay = useOverlay()

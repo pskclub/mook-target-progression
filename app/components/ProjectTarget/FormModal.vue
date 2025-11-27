@@ -47,6 +47,7 @@ const props = defineProps<{
 }>()
 
 const productLoader = useProductsPageLoader()
+const project = useProjectsPageLoader()
 
 const form = useForm({
   initialValues: props.values,
@@ -68,7 +69,13 @@ const formFields = createFormFields(() => [
       options: productLoader.fetch.items.map((item: any) => ({
         label: item.name,
         value: item.id,
-      })),
+      })).filter((item: any) => {
+        if (props.isEditing && props.values.product_id === item.value) {
+          return true
+        }
+
+        return project.find.item?.project_targets?.every((target: any) => target.product_id !== item.value)
+      }),
       loading: productLoader.fetch.status.isLoading,
     },
   },

@@ -48,7 +48,7 @@ export const useProjectProgressLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(*), zones(*), customers(*)',
+          select: '*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*)',
           order: 'created_at.desc',
         },
         adapter: createSupabaseAdapter(['products.name', 'zones.name', 'customers.name']),
@@ -63,7 +63,7 @@ export const useProjectTargetLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(*)',
+          select: '*, products:progression_products(*)',
           order: 'id.desc',
         },
         adapter: createSupabaseAdapter(['products.name']),
@@ -78,7 +78,7 @@ export const useProjectScheduleLoader = (_projectId: string) => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select: '*, products(*), zones(*), customers(*)',
+          select: '*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*)',
           order: 'start_date.asc',
         },
         adapter: createSupabaseAdapter(['products.name', 'zones.name', 'customers.name']),

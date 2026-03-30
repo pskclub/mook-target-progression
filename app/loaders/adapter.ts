@@ -1,6 +1,7 @@
 import type { AxiosAdapter, AxiosRequestConfig, AxiosResponse } from 'axios'
+import { insforge } from '../utils/insforge'
 
-interface SupabaseAdapterConfig extends AxiosRequestConfig {
+interface InsforgeAdapterConfig extends AxiosRequestConfig {
   params?: {
     select?: string
     order?: string
@@ -19,24 +20,24 @@ interface IQueryResult {
 }
 
 /**
- * Creates a Supabase adapter for Axios that handles pagination and search
+ * Creates an InsForge adapter for Axios that handles pagination and search
  * @param searchColumns - Array of column names to search in when using the 'q' parameter
  * @returns AxiosAdapter
  */
 export const createSupabaseAdapter = (
   searchColumns: string[] = ['name', 'description'],
 ): AxiosAdapter => {
-  return async (config: SupabaseAdapterConfig): Promise<AxiosResponse> => {
-    const supabase = useSupabaseClient()
+  return async (config: InsforgeAdapterConfig): Promise<AxiosResponse> => {
     const {
       url = '', params = {}, method = 'GET', data,
     } = config
 
-    // Extract table name from URL
-    const tableName = url.split('/').pop() as string
+    // Extract table name from URL and add progression_ prefix
+    const pathName = url.split('/').pop() as string
+    const tableName = `progression_${pathName}`
 
     // Initialize query with select statement
-    let query = supabase.from(tableName).select(params.select || '*', {
+    let query = insforge.database.from(tableName).select(params.select || '*', {
       count: 'exact',
     })
 
@@ -82,7 +83,9 @@ export const createSupabaseAdapter = (
 
     // Apply ordering if specified
     if (params.order) {
-      const [column, direction] = params.order.split('.')
+      const parts = params.order.split('.')
+      const column = parts[0] as string
+      const direction = parts[1]
 
       query = query.order(column, {
         ascending: direction === 'asc',
@@ -98,8 +101,10 @@ export const createSupabaseAdapter = (
     // Handle different loader types based on method and parameters
     if (method.toLowerCase() === 'get' && params.id) {
       // ObjectLoader case for GET
-      const result = await supabase
-        .from(url.split('/')[1])
+      const tableWithoutId = url.split('/')[1] || pathName
+      const getTableName = `progression_${tableWithoutId}`
+      const result = await insforge.database
+        .from(getTableName)
         .select(params.select)
         .eq('id', params.id)
 
@@ -107,7 +112,7 @@ export const createSupabaseAdapter = (
         data: result.data?.[0] || null,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: config.headers as any,
         config,
       }
     } else if (method.toLowerCase() === 'get') {
@@ -127,7 +132,7 @@ export const createSupabaseAdapter = (
           },
           status: 200,
           statusText: 'OK',
-          headers: {},
+          headers: config.headers as any,
           config,
         }
       }
@@ -139,44 +144,48 @@ export const createSupabaseAdapter = (
         data: result.data || [],
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: config.headers as any,
         config,
       }
     } else if (method.toLowerCase() === 'post') {
       // ObjectLoader case for POST
-      result = await supabase.from(tableName).insert(JSON.parse(data)).select()
+      result = await insforge.database.from(tableName).insert(JSON.parse(data)).select()
 
       return {
         data: result.data?.[0] || null,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: config.headers as any,
         config,
       }
     } else if (method.toLowerCase() === 'put') {
       // ObjectLoader case for PUT
-      result = await supabase
-        .from(url.split('/')[1])
+      const tableWithoutId = url.split('/')[1] || pathName
+      const updateTableName = `progression_${tableWithoutId}`
+      result = await insforge.database
+        .from(updateTableName)
         .update(JSON.parse(data))
-        .eq('id', tableName)
+        .eq('id', pathName)
         .select()
 
       return {
         data: result.data?.[0] || null,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: config.headers as any,
         config,
       }
     } else if (method.toLowerCase() === 'delete') {
-      // ObjectLoader case for PUT
-      result = await supabase.from(url.split('/')[1]).delete().eq('id', tableName)
+      // ObjectLoader case for DELETE
+      const tableWithoutId = url.split('/')[1] || pathName
+      const deleteTableName = `progression_${tableWithoutId}`
+      result = await insforge.database.from(deleteTableName).delete().eq('id', pathName)
 
       return {
         data: result.data?.[0] || null,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: config.headers as any,
         config,
       }
     }

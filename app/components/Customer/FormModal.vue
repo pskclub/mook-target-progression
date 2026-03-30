@@ -46,11 +46,15 @@ const props = defineProps<{
   onSubmit: (values: any) => void
 }>()
 
+const provinceStore = useProvincePageLoader()
+const provinces = computed(() => provinceStore.fetch.items || [])
+
 const form = useForm({
   initialValues: props.values,
   validationSchema: toTypedSchema(
     v.object({
       name: v.optional(v.pipe(v.string(), v.nonEmpty()), ''),
+      province_id: v.optional(v.number(), undefined),
     }),
   ),
 })
@@ -64,7 +68,25 @@ const formFields = createFormFields(() => [
       required: true,
     },
   },
+  {
+    type: INPUT_TYPES.SELECT,
+    props: {
+      label: 'จังหวัด',
+      name: 'province_id',
+      options: provinces.value.map((p) => ({
+        label: p.name_th,
+        value: p.id,
+      })),
+      placeholder: 'เลือกจังหวัด',
+    },
+  },
 ])
+
+onMounted(() => {
+  if (!provinces.value.length) {
+    provinceStore.fetchPage()
+  }
+})
 
 const onSubmit = form.handleSubmit((values) => {
   props.onSubmit(values)

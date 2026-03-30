@@ -1,6 +1,11 @@
 export interface ICustomer {
   id: string
   name: string
+  province_id?: number
+  provinces?: {
+    id: number
+    name_th: string
+  } | null
   created_at: string
 }
 
@@ -10,11 +15,10 @@ export const useCustomerPageLoader = () => {
     getBaseRequestOptions: () => {
       return {
         params: {
-          select:
-            '*',
+          select: '*, provinces:progression_provinces(*)',
           order: 'id.desc',
         },
-        adapter: createSupabaseAdapter(['name']),
+        adapter: createSupabaseAdapter(['name', 'provinces.name_th']),
       }
     },
   })

@@ -61,6 +61,11 @@ const tableOptions = useTable({
       type: COLUMN_TYPES.TEXT,
     },
     {
+      accessorKey: 'provinces.name_th',
+      header: 'Province',
+      type: COLUMN_TYPES.TEXT,
+    },
+    {
       accessorKey: 'created_at',
       header: 'Created at',
       type: COLUMN_TYPES.DATE,

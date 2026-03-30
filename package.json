@@ -11,13 +11,7 @@
     "preview": "nuxt preview",
     "lint": "eslint . --cache",
     "lint:fix": "eslint --fix . --cache",
-    "postinstall": "nuxt prepare",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@finema/core": "^3.0.1",
@@ -32,8 +26,6 @@
   },
   "devDependencies": {
     "@finema/eslint-config": "^2.0.3",
-    "@nuxtjs/supabase": "^2.0.1",
-    "dotenv": "^17.2.3",
-    "prisma": "^7.0.0"
+    "dotenv": "^17.2.3"
   }
 }

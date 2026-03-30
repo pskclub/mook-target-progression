@@ -279,13 +279,20 @@ const onAdd = () => {
     projectId: props.projectId,
     zoneId: props.zoneId!,
     status: () => loader.add.status,
-    onSubmit: (payload: IProjectProgress) => {
+    onSubmit: async (payload: any) => {
+      const items = payload.items || []
+
+      const dataToInsert = items.map((item: any) => ({
+        product_id: item.product_id,
+        customer_id: item.customer_id,
+        status: item.status,
+        description: item.description,
+        zone_id: props.zoneId,
+        project_id: props.projectId,
+      }))
+
       loader.addRun({
-        data: {
-          ...payload,
-          zone_id: props.zoneId,
-          project_id: props.projectId,
-        },
+        data: dataToInsert,
       })
     },
   })
@@ -365,7 +372,7 @@ useWatchTrue(
 useWatchTrue(
   () => loader.delete.status.isSuccess,
   () => {
-    loader.fetchPage()
+    emits('refresh')
     dialog.close()
     noti.success({
       title: 'ลบการดำเนินการสำเร็จ',

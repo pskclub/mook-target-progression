@@ -63,6 +63,7 @@
       <template #progress>
         <ProjectProgressSection
           :project-id="projectId"
+          @refresh="onRefresh"
         />
       </template>
 

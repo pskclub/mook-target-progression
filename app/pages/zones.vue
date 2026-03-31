@@ -29,6 +29,23 @@
         </div>
       </template>
 
+      <template #provinces-cell="{ row }">
+        <div class="flex flex-wrap gap-1">
+          <Badge
+            v-for="province in row.original.provinces || []"
+            :key="province.id"
+            variant="subtle"
+            color="neutral"
+          >
+            {{ province.name_th }}
+          </Badge>
+          <span
+            v-if="!(row.original.provinces?.length)"
+            class="text-gray-400"
+          >-</span>
+        </div>
+      </template>
+
       <template #actions-cell="{ row }">
         <div class="flex justify-end">
           <ButtonActionIcon
@@ -78,6 +95,11 @@ const tableOptions = useTable({
     {
       accessorKey: 'color',
       header: 'Color',
+      type: COLUMN_TYPES.TEXT,
+    },
+    {
+      accessorKey: 'provinces',
+      header: 'Provinces',
       type: COLUMN_TYPES.TEXT,
     },
     {
@@ -146,13 +168,13 @@ const onEdit = async (values: any) => {
     selectedIds,
     status: () => zone.update.status,
     onSubmit: async (payload: any, selectedProvinces: number[]) => {
-      // First, trigger record update via loader
+      // First, manually update provinces
+      await updateProvincesMapping(values.id, selectedProvinces)
+
+      // Next, trigger record update via loader
       await zone.updateRun(values.id, {
         data: payload,
       })
-
-      // Next, manually update provinces
-      await updateProvincesMapping(values.id, selectedProvinces)
     },
   })
 }

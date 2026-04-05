@@ -26,7 +26,7 @@ export const useProjectsPageLoader = defineStore('projects', () => {
       getRequestOptions: () => {
         return {
           params: {
-            select: '*, project_targets:progression_project_targets(*, products:progression_products(*)), project_progresses:progression_project_progresses(*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*)), project_schedules:progression_project_schedules(*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*))',
+            select: '*, project_targets:progression_project_targets(*, products:progression_products(*)), project_progresses:progression_project_progresses(*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*, provinces:progression_provinces(*))), project_schedules:progression_project_schedules(*, products:progression_products(*), zones:progression_zones(*), customers:progression_customers(*, provinces:progression_provinces(*)))',
           },
         }
       },

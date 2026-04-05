@@ -63,6 +63,34 @@
           </button>
         </div>
 
+        <!-- Product filter (visible in density modes) -->
+        <div
+          v-if="mapMode !== 'zone' && productOptions.length > 0"
+          class="flex flex-wrap items-center gap-1.5"
+        >
+          <span class="text-xs text-gray-400">สินค้า:</span>
+          <button
+            class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+            :class="selectedProductId === null
+              ? 'bg-violet-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            @click="selectedProductId = null"
+          >
+            ทั้งหมด
+          </button>
+          <button
+            v-for="prod in productOptions"
+            :key="prod.id"
+            class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+            :class="selectedProductId === prod.id
+              ? 'bg-violet-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            @click="selectedProductId = prod.id"
+          >
+            {{ prod.name }}
+          </button>
+        </div>
+
         <!-- Map container -->
         <div class="relative">
           <!-- Tooltip -->
@@ -75,8 +103,15 @@
               <p class="text-sm font-semibold">
                 {{ hoveredProvince.name_th }}
               </p>
+              <span
+                v-if="hoveredProvince.isSpecial"
+                class="rounded px-1.5 py-0.5 text-[10px] font-bold text-white"
+                style="background-color: #f59e0b"
+              >
+                จังหวัดพิเศษ
+              </span>
               <p
-                v-if="hoveredProvince.zone"
+                v-else-if="hoveredProvince.zone"
                 class="rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
                 :style="`background-color: ${hoveredProvince.zone.color}`"
               >
@@ -194,7 +229,16 @@
               name="i-heroicons-chevron-right"
               class="size-3 text-gray-400"
             />
-            <span class="font-medium text-gray-700">{{ selectedProvinceName }}</span>
+            <span class="flex items-center gap-1 font-medium text-gray-700">
+              {{ selectedProvinceName }}
+              <span
+                v-if="isSpecialProvince(selectedProvinceName)"
+                class="rounded px-1 py-0.5 text-[9px] font-bold text-white"
+                style="background-color: #f59e0b"
+              >
+                พิเศษ
+              </span>
+            </span>
           </template>
         </div>
 
@@ -371,7 +415,16 @@
                 :class="prov.customerCount > 0 ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default opacity-50'"
                 @click="prov.customerCount > 0 && onProvinceClick(prov.name_th)"
               >
-                <span class="text-sm font-medium">{{ prov.name_th }}</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-sm font-medium">{{ prov.name_th }}</span>
+                  <span
+                    v-if="prov.isSpecial"
+                    class="rounded px-1 py-0.5 text-[9px] font-bold text-white"
+                    style="background-color: #f59e0b"
+                  >
+                    พิเศษ
+                  </span>
+                </div>
                 <div class="flex items-center gap-2">
                   <div class="flex gap-1">
                     <Badge
@@ -403,6 +456,119 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Panel: Bangkok (special) → Customers grouped by zone -->
+        <div
+          v-else-if="selectedProvinceName && isSpecialProvince(selectedProvinceName)"
+          class="space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <p class="text-xs font-medium tracking-wide text-gray-400 uppercase">
+                ลูกค้าในกรุงเทพมหานคร
+              </p>
+              <span
+                class="rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
+                style="background-color: #f59e0b"
+              >
+                จังหวัดพิเศษ
+              </span>
+            </div>
+            <button
+              class="text-xs text-gray-400 hover:text-gray-600"
+              @click="clearSelection"
+            >
+              ← กลับ
+            </button>
+          </div>
+
+          <div
+            v-for="group in bangkokCustomersByZone"
+            :key="group.zone.id"
+            class="overflow-hidden rounded-lg border"
+          >
+            <!-- Zone header -->
+            <div
+              class="flex items-center justify-between px-3 py-2"
+              :style="`background-color: ${group.zone.color}18; border-left: 4px solid ${group.zone.color}`"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="rounded px-2 py-0.5 text-xs font-bold text-white"
+                  :style="`background-color: ${group.zone.color}`"
+                >
+                  {{ group.zone.name }}
+                </span>
+                <span class="text-xs text-gray-500">{{ group.customerCount }} ลูกค้า</span>
+              </div>
+              <span class="text-xs text-gray-400">{{ group.progressCount }} รายการ</span>
+            </div>
+
+            <!-- Customers in this zone -->
+            <div class="divide-y">
+              <div
+                v-for="customer in group.customers"
+                :key="customer.id"
+                class="p-3"
+              >
+                <div class="mb-2 flex items-center gap-2">
+                  <div
+                    class="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                    :style="`background-color: ${group.zone.color}`"
+                  >
+                    {{ customer.name.charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm font-semibold">
+                      {{ customer.name }}
+                    </p>
+                    <div class="flex flex-wrap gap-1">
+                      <Badge
+                        v-for="s in customer.statusStats.filter(x => x.count > 0)"
+                        :key="s.key"
+                        :color="s.color"
+                        variant="subtle"
+                        class="text-[10px]"
+                      >
+                        {{ s.count }} {{ s.label }}
+                      </Badge>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-gray-600">{{ customer.progressCount }}</span>
+                </div>
+                <div class="space-y-1 border-t pt-2">
+                  <div
+                    v-for="prod in customer.products"
+                    :key="prod.id"
+                    class="flex items-center gap-2"
+                  >
+                    <span class="w-24 truncate text-[11px] text-gray-600">{{ prod.name }}</span>
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                      <div
+                        class="h-full rounded-full transition-all"
+                        :style="`width: ${prod.barWidth}%; background-color: ${group.zone.color}`"
+                      />
+                    </div>
+                    <Badge
+                      :color="getStatusColor(prod.topStatus)"
+                      variant="subtle"
+                      class="text-[10px]"
+                    >
+                      {{ prod.count }}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="bangkokCustomersByZone.length === 0"
+            class="py-6 text-center text-sm text-gray-400"
+          >
+            ยังไม่มีลูกค้าในกรุงเทพมหานคร
           </div>
         </div>
 
@@ -584,13 +750,43 @@ const englishToThai: Record<string, string> = {
 const progresses = computed(() => project.find.item?.project_progresses || [])
 const targets = computed(() => project.find.item?.project_targets || [])
 
+// ---- special provinces (shared across all zones) ----
+const SPECIAL_PROVINCE_NAMES = new Set(['กรุงเทพมหานคร'])
+const SPECIAL_PROVINCE_COLOR = '#f59e0b' // amber — distinct from all zone colors
+
+const isSpecialProvince = (nameTh: string) => SPECIAL_PROVINCE_NAMES.has(nameTh)
+
+// Derive special province info purely from customer.provinces data in progresses
+const specialProvinceMap = computed(() => {
+  const result = new Map<string, { id: number
+    name_th: string }>()
+
+  for (const p of progresses.value) {
+    const provName = (p.customers as any)?.provinces?.name_th as string | undefined
+    const provId = (p.customers as any)?.province_id as number | undefined
+
+    if (provName && provId && SPECIAL_PROVINCE_NAMES.has(provName) && !result.has(provName)) {
+      result.set(provName, {
+        id: provId,
+        name_th: provName,
+      })
+    }
+
+    if (result.size === SPECIAL_PROVINCE_NAMES.size) break
+  }
+
+  return result
+})
+
 // ---- province helpers ----
 const provinceZoneMap = computed(() => {
   const map = new Map<string, typeof zoneLoader.fetch.items[0]>()
 
   for (const zone of zoneLoader.fetch.items) {
     for (const prov of zone.provinces || []) {
-      map.set(prov.name_th, zone)
+      if (!isSpecialProvince(prov.name_th)) {
+        map.set(prov.name_th, zone)
+      }
     }
   }
 
@@ -611,8 +807,11 @@ const customersByProvince = computed(() => {
 })
 
 const getProvNameTh = (p: typeof progresses.value[0]): string | undefined => {
+  // Primary: nested province name (available for all provinces including Bangkok)
   const nameFromNested = (p.customers as any)?.provinces?.name_th as string | undefined
   if (nameFromNested) return nameFromNested
+
+  // Fallback: resolve by province_id from zone provinces (non-special)
   const id = (p.customers as any)?.province_id as number | undefined
   if (!id) return undefined
 
@@ -628,6 +827,7 @@ const getProvNameTh = (p: typeof progresses.value[0]): string | undefined => {
 type MapMode = 'zone' | 'customers' | 'progress' | 'products'
 
 const mapMode = ref<MapMode>('zone')
+const selectedProductId = ref<string | null>(null)
 
 const mapModes: { value: MapMode
   label: string }[] = [
@@ -649,29 +849,57 @@ const mapModes: { value: MapMode
   },
 ]
 
+const productOptions = computed(() =>
+  targets.value.map((t) => ({
+    id: t.product_id,
+    name: t.products?.name || '-',
+  })),
+)
+
+// Reset product filter when switching to zone mode
+watch(mapMode, (mode) => {
+  if (mode === 'zone') selectedProductId.value = null
+})
+
 // ---- province value map for density ----
 const provinceValueMap = computed(() => {
   const map = new Map<string, number>()
+  const pid = selectedProductId.value
 
-  for (const p of progresses.value) {
+  // Filtered progress list
+  const filtered = pid ? progresses.value.filter((p) => p.product_id === pid) : progresses.value
+
+  for (const p of filtered) {
     const name = getProvNameTh(p)
     if (!name) continue
 
-    if (mapMode.value === 'customers') {
-      if (!map.has(name)) map.set(name, 0)
-      // will recalculate using customersByProvince below
-    } else if (mapMode.value === 'progress') {
+    if (mapMode.value === 'progress' || mapMode.value === 'products') {
       map.set(name, (map.get(name) ?? 0) + 1)
-    } else if (mapMode.value === 'products') {
-      // count unique products per province
-      const key = `${name}::${p.product_id}`
-      if (!map.has(key)) map.set(name, (map.get(name) ?? 0) + 1)
+    } else if (mapMode.value === 'customers') {
+      // accumulate unique customers per province (handled below)
+      if (!map.has(name)) map.set(name, 0)
     }
   }
 
   if (mapMode.value === 'customers') {
-    for (const [name, ids] of customersByProvince.value) {
-      map.set(name, ids.size)
+    if (pid) {
+      // Unique customers for specific product per province
+      const custByProv = new Map<string, Set<string>>()
+
+      for (const p of filtered) {
+        const name = getProvNameTh(p)
+        if (!name) continue
+        if (!custByProv.has(name)) custByProv.set(name, new Set())
+        custByProv.get(name)!.add(p.customer_id)
+      }
+
+      for (const [name, ids] of custByProv) {
+        map.set(name, ids.size)
+      }
+    } else {
+      for (const [name, ids] of customersByProvince.value) {
+        map.set(name, ids.size)
+      }
     }
   }
 
@@ -717,9 +945,13 @@ const densityLegend = computed(() => {
     maxValue: 0,
   }
   const cfg = densityModeConfig[mapMode.value]
+  const prodName = selectedProductId.value
+    ? productOptions.value.find((p) => p.id === selectedProductId.value)?.name
+    : null
 
   return {
     ...cfg,
+    label: prodName ? `${cfg.label} — ${prodName}` : cfg.label,
     maxValue: maxProvinceValue.value,
   }
 })
@@ -728,13 +960,18 @@ const densityLegend = computed(() => {
 const getProvinceColor = (svgName: string): string => {
   const thaiName = englishToThai[svgName]
   if (!thaiName) return '#e5e7eb'
-  const zone = provinceZoneMap.value.get(thaiName)
-  if (!zone) return '#e5e7eb'
 
   if (mapMode.value !== 'zone') {
-    return densityModeConfig[mapMode.value].fullColor
+    const hasData = provinceZoneMap.value.has(thaiName) || isSpecialProvince(thaiName)
+
+    return hasData ? densityModeConfig[mapMode.value].fullColor : '#e5e7eb'
   }
 
+  // Special province: amber color always
+  if (isSpecialProvince(thaiName)) return SPECIAL_PROVINCE_COLOR
+
+  const zone = provinceZoneMap.value.get(thaiName)
+  if (!zone) return '#e5e7eb'
   if (selectedZone.value && selectedZone.value.id !== zone.id) return `${zone.color}40`
 
   return zone.color
@@ -751,15 +988,22 @@ const getProvinceFillOpacity = (svgName: string): number => {
 }
 
 const getProvinceOpacity = (svgName: string): number => {
-  if (!selectedProvinceName.value) return 1
   const thaiName = englishToThai[svgName]
 
-  return thaiName === selectedProvinceName.value ? 1 : 0.4
+  // Special provinces are never dimmed
+  if (thaiName && isSpecialProvince(thaiName)) return 1
+
+  if (selectedProvinceName.value) {
+    return thaiName === selectedProvinceName.value ? 1 : 0.4
+  }
+
+  return 1
 }
 
 const getProvinceCursor = (svgName: string): string => {
   const thaiName = englishToThai[svgName]
   if (!thaiName) return 'cursor-default'
+  if (isSpecialProvince(thaiName)) return 'cursor-pointer'
 
   return customersByProvince.value.has(thaiName) ? 'cursor-pointer' : 'cursor-default'
 }
@@ -856,41 +1100,56 @@ const selectedZoneProductStats = computed(() =>
 )
 
 // ---- province list for selected zone ----
+const buildProvinceEntry = (provNameTh: string, provId: number, zoneId: string) => {
+  const provProgs = progresses.value.filter(
+    (p) => p.zone_id === zoneId && getProvNameTh(p) === provNameTh,
+  )
+
+  const productCountMap = new Map<string, { id: string
+    name: string
+    count: number }>()
+
+  for (const p of provProgs) {
+    if (!p.products) continue
+    const existing = productCountMap.get(p.product_id)
+    if (existing) existing.count++
+    else productCountMap.set(p.product_id, {
+      id: p.product_id,
+      name: p.products.name,
+      count: 1,
+    })
+  }
+
+  return {
+    id: provId,
+    name_th: provNameTh,
+    isSpecial: isSpecialProvince(provNameTh),
+    customerCount: customersByProvince.value.get(provNameTh) !== undefined
+      ? provProgs.length > 0
+        ? new Set(provProgs.map((p) => p.customer_id)).size
+        : 0
+      : 0,
+    progressCount: provProgs.length,
+    topProducts: Array.from(productCountMap.values()).sort((a, b) => b.count - a.count).slice(0, 2),
+  }
+}
+
 const selectedZoneProvinces = computed(() => {
   if (!selectedZone.value) return []
 
-  return (selectedZone.value.provinces || []).map((prov) => {
-    const provProgs = progresses.value.filter(
-      (p) => p.zone_id === selectedZone.value!.id && getProvNameTh(p) === prov.name_th,
-    )
+  const zoneId = selectedZone.value.id
 
-    // top products by count (max 2 badges)
-    const productCountMap = new Map<string, { id: string
-      name: string
-      count: number }>()
+  // Regular provinces in this zone (excluding special ones)
+  const regular = (selectedZone.value.provinces || [])
+    .filter((pv) => !isSpecialProvince(pv.name_th))
+    .map((pv) => buildProvinceEntry(pv.name_th, pv.id, zoneId))
+    .sort((a, b) => b.customerCount - a.customerCount)
 
-    for (const p of provProgs) {
-      if (!p.products) continue
-      const existing = productCountMap.get(p.product_id)
-      if (existing) existing.count++
-      else productCountMap.set(p.product_id, {
-        id: p.product_id,
-        name: p.products.name,
-        count: 1,
-      })
-    }
+  // Always append special provinces (Bangkok etc.)
+  const special = Array.from(specialProvinceMap.value.values())
+    .map((pv) => buildProvinceEntry(pv.name_th, pv.id, zoneId))
 
-    const topProducts = Array.from(productCountMap.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 2)
-
-    return {
-      ...prov,
-      customerCount: customersByProvince.value.get(prov.name_th)?.size ?? 0,
-      progressCount: provProgs.length,
-      topProducts,
-    }
-  }).sort((a, b) => b.customerCount - a.customerCount)
+  return [...regular, ...special]
 })
 
 // ---- customer list for selected province ----
@@ -1009,6 +1268,7 @@ const tooltipStyle = computed(() => {
 // ---- hover ----
 const hoveredProvince = ref<{
   name_th: string
+  isSpecial: boolean
   zone: typeof zoneLoader.fetch.items[0] | null
   customerCount: number
   progressCount: number
@@ -1046,6 +1306,7 @@ const onProvinceHover = (svgName: string) => {
 
   hoveredProvince.value = {
     name_th: thaiName,
+    isSpecial: isSpecialProvince(thaiName),
     zone,
     customerCount: customersByProvince.value.get(thaiName)?.size ?? 0,
     progressCount: provProgs.length,
@@ -1053,9 +1314,114 @@ const onProvinceHover = (svgName: string) => {
   }
 }
 
+// ---- Bangkok: customers grouped by zone ----
+const bangkokCustomersByZone = computed(() => {
+  if (!selectedProvinceName.value || !isSpecialProvince(selectedProvinceName.value)) return []
+  const provName = selectedProvinceName.value
+
+  return zoneLoader.fetch.items.map((zone) => {
+    const zoneProgs = progresses.value.filter(
+      (p) => p.zone_id === zone.id && getProvNameTh(p) === provName,
+    )
+
+    if (zoneProgs.length === 0) return null
+
+    type CEntry = {
+      id: string
+      name: string
+      progressCount: number
+      statusCounts: Record<string, number>
+      productCounts: Map<string, { id: string
+        name: string
+        count: number
+        statusCounts: Record<string, number> }>
+    }
+
+    const customerMap = new Map<string, CEntry>()
+
+    for (const p of zoneProgs) {
+      if (!p.customers) continue
+      const existing = customerMap.get(p.customer_id)
+
+      if (existing) {
+        existing.progressCount++
+        existing.statusCounts[p.status] = (existing.statusCounts[p.status] || 0) + 1
+        const prod = existing.productCounts.get(p.product_id)
+
+        if (prod) {
+          prod.count++
+          prod.statusCounts[p.status] = (prod.statusCounts[p.status] || 0) + 1
+        } else {
+          existing.productCounts.set(p.product_id, {
+            id: p.product_id,
+            name: p.products?.name || '-',
+            count: 1,
+            statusCounts: {
+              [p.status]: 1,
+            },
+          })
+        }
+      } else {
+        customerMap.set(p.customer_id, {
+          id: p.customer_id,
+          name: (p.customers as any).name || '-',
+          progressCount: 1,
+          statusCounts: {
+            [p.status]: 1,
+          },
+          productCounts: new Map([[p.product_id, {
+            id: p.product_id,
+            name: p.products?.name || '-',
+            count: 1,
+            statusCounts: {
+              [p.status]: 1,
+            },
+          }]]),
+        })
+      }
+    }
+
+    const maxCount = Math.max(...Array.from(customerMap.values()).map((c) => c.progressCount), 1)
+
+    const customers = Array.from(customerMap.values()).map((c) => ({
+      ...c,
+      statusStats: Object.values(PROJECT_PROGRESS_STATUS).map((status) => ({
+        key: status,
+        label: PROJECT_PROGRESS_STATUS_LABEL[status],
+        count: c.statusCounts[status] || 0,
+        color: getStatusColor(status),
+      })),
+      products: Array.from(c.productCounts.values())
+        .sort((a, b) => b.count - a.count)
+        .map((prod) => ({
+          ...prod,
+          topStatus: Object.entries(prod.statusCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+            || PROJECT_PROGRESS_STATUS.PENDING,
+          barWidth: (prod.count / maxCount) * 100,
+        })),
+    })).sort((a, b) => b.progressCount - a.progressCount)
+
+    return {
+      zone,
+      customers,
+      customerCount: customers.length,
+      progressCount: zoneProgs.length,
+    }
+  }).filter((g) => g !== null)
+})
+
 // ---- interactions ----
 const onProvinceClick = (nameOrEnglish: string) => {
   const thaiName = englishToThai[nameOrEnglish] ?? nameOrEnglish
+
+  if (isSpecialProvince(thaiName)) {
+    // Bangkok: select province without zone — panel groups by zone
+    selectedZoneId.value = null
+    selectedProvinceName.value = thaiName
+
+    return
+  }
+
   const zone = provinceZoneMap.value.get(thaiName)
   if (!zone) return
   selectedZoneId.value = zone.id

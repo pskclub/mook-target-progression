@@ -48,6 +48,12 @@
           slot: 'zone',
           value: 'zone',
         },
+        {
+          label: 'Map',
+          icon: 'i-heroicons-map',
+          slot: 'map',
+          value: 'map',
+        },
       ]"
     >
       <template #dashboard>
@@ -160,6 +166,9 @@
             </Card>
           </div>
         </div>
+      </template>
+      <template #map>
+        <ProjectDashboardThailandMapSection />
       </template>
     </Tabs>
   </StatusBox>

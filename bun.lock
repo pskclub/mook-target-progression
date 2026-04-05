@@ -10,6 +10,7 @@
         "@nuxt/eslint": "1.10.0",
         "@nuxt/test-utils": "3.20.1",
         "@prisma/client": "^7.0.0",
+        "@svg-maps/thailand": "^2.0.0",
         "eslint": "^9.0.0",
         "nuxt": "^4.2.1",
         "vue": "^3.5.24",
@@ -547,6 +548,8 @@
     "@supabase/node-fetch": ["@supabase/node-fetch@2.6.15", "", { "dependencies": { "whatwg-url": "^5.0.0" } }, "sha512-1ibVeYUacxWYi9i0cf5efil6adJ9WRyZBLivgjs+AUpewx1F3xPi7gLgaASI2SmIQxPoCEjAsLAzKPgMJVgOUQ=="],
 
     "@supabase/postgrest-js": ["@supabase/postgrest-js@1.21.4", "", { "dependencies": { "@supabase/node-fetch": "^2.6.14" } }, "sha512-TxZCIjxk6/dP9abAi89VQbWWMBbybpGWyvmIzTd79OeravM13OjR/YEYeyUOPcM1C3QyvXkvPZhUfItvmhY1IQ=="],
+
+    "@svg-maps/thailand": ["@svg-maps/thailand@2.0.0", "", {}, "sha512-gyGxZvxtQXBt/mwiVUymzXFb5VX40rytGLnoF3goadEnWAiAM2/1qRl07W7VDYzmumUvZdV2hzlXhyxRWrghSA=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.17", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-5IKx/Y13RsYd+sauPb2x+U/xZikHjolzfuDgTAl/Tdf3Q8rslRvC19NKDLgAJQ6wsqADk10ntlv08nPFw/gO/A=="],
 

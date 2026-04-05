@@ -135,7 +135,21 @@ const products = computed(() => {
 })
 
 const customers = computed(() => {
-  return useProjectDetail().scheduleCustomers.value
+  const all = useProjectDetail().scheduleCustomers.value
+  const activeZoneId = props.zoneId || (form.values as any).zone_id
+  if (!activeZoneId) return all
+
+  const zone = zoneLoader.fetch.items.find((z) => z.id === activeZoneId)
+  const zoneProvinceIds = zone?.provinces?.map((p) => p.id) ?? []
+
+  return all.filter((customer) => {
+    const provinceName = (customer as any).provinces?.name_th ?? ''
+    if (provinceName.includes('กรุงเทพ')) return true
+    const provinceId = (customer as any).province_id
+    if (!provinceId) return true
+
+    return zoneProvinceIds.includes(provinceId)
+  })
 })
 
 const formFields = createFormFields(() => [
@@ -349,7 +363,16 @@ const scheduleItems = computed(() => {
         }
       }
 
-      return true
+      // แสดงเฉพาะ customer ที่อยู่ใน zone ของ item นั้น หรือกรุงเทพ
+      const provinceName = (item.customers as any)?.provinces?.name_th ?? ''
+      if (provinceName.includes('กรุงเทพ')) return true
+
+      const itemZone = zoneLoader.fetch.items.find((z) => z.id === item.zone_id)
+      const zoneProvinceIds = itemZone?.provinces?.map((p) => p.id) ?? []
+      const customerProvinceId = (item.customers as any)?.province_id
+      if (!customerProvinceId) return true
+
+      return zoneProvinceIds.includes(customerProvinceId)
     })
 })
 

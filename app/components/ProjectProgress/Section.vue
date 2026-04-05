@@ -95,6 +95,7 @@ const props = defineProps<{
 
 const loader = useProjectProgressLoader(props.projectId)
 const project = useProjectsPageLoader()
+const zoneLoader = useZonePageLoader()
 const scheduleLoader = useProjectScheduleLoader(props.projectId)
 const overlay = useOverlay()
 const dialog = useDialog()
@@ -125,7 +126,19 @@ const products = computed(() => {
 })
 
 const customers = computed(() => {
-  return useProjectDetail().customers.value
+  const all = useProjectDetail().customers.value
+  if (!props.zoneId) return all
+
+  const zone = zoneLoader.fetch.items.find(z => z.id === props.zoneId)
+  const zoneProvinceIds = zone?.provinces?.map(p => p.id) ?? []
+
+  return all.filter((customer) => {
+    const provinceName = (customer as any).provinces?.name_th ?? ''
+    if (provinceName.includes('กรุงเทพ')) return true
+    const provinceId = (customer as any).province_id
+    if (!provinceId) return true
+    return zoneProvinceIds.includes(provinceId)
+  })
 })
 
 const formFields = createFormFields(() => [
@@ -321,15 +334,18 @@ const progressItems = computed(() => {
   const items = project.find.item?.project_progresses || []
 
   return items.filter((item) => {
-    if (props.productId && item.product_id !== props.productId) {
-      return false
-    }
+    if (props.productId && item.product_id !== props.productId) return false
+    if (props.zoneId && item.zone_id !== props.zoneId) return false
 
-    if (props.zoneId && item.zone_id !== props.zoneId) {
-      return false
-    }
+    // แสดงเฉพาะ customer ที่อยู่ใน zone เดียวกัน หรือกรุงเทพ
+    const provinceName = (item.customers as any)?.provinces?.name_th ?? ''
+    if (provinceName.includes('กรุงเทพ')) return true
 
-    return true
+    const zone = zoneLoader.fetch.items.find(z => z.id === item.zone_id)
+    const zoneProvinceIds = zone?.provinces?.map(p => p.id) ?? []
+    const customerProvinceId = (item.customers as any)?.province_id
+    if (!customerProvinceId) return true
+    return zoneProvinceIds.includes(customerProvinceId)
   }).sort((a, b) => {
     const zoneCompare = (a.zones?.name || '').localeCompare(b.zones?.name || '')
     if (zoneCompare !== 0) return zoneCompare

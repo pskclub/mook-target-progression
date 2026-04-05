@@ -244,7 +244,7 @@
 
         <!-- Panel: No selection → Zone legend + overall product stats -->
         <div
-          v-if="!selectedZone"
+          v-if="!selectedZone && !selectedProvinceName"
           class="space-y-4"
         >
           <!-- Product overall stats -->
